@@ -6,8 +6,13 @@ import axios, { AxiosError } from "axios";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// DOCX va FileSaver importlari
+import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, TabStopType, TabStopPosition, BorderStyle, Table, TableRow, TableCell, WidthType, VerticalAlign, PageOrientation } from "docx";
+import { saveAs } from "file-saver";
+
+
 // Ikonkalar
-import { LogOut, Search, ShoppingBag, ShoppingCart, Truck, Users, Minus, Plus as PlusIcon, History, Eye, Edit, Loader2, X, Save, RotateCcw, CheckCircle, Repeat, Printer } from "lucide-react";
+import { LogOut, Search, ShoppingBag, ShoppingCart, Truck, Users, Minus, Plus as PlusIcon, History, Eye, Edit, Loader2, X, Save, RotateCcw, CheckCircle, Repeat, Printer, Download } from "lucide-react"; // Download ikonkasini qo'shdim
 // UI Komponentlari
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +25,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const API_BASE_URL = "https://oshxonacopy.pythonanywhere.com/api"; // Bu API endi faqat ma'lumot olish/yuborish uchun kerak
+const API_BASE_URL = "https://oshxonacopy.pythonanywhere.com/api";
 
 const handleApiError = (error: any, contextMessage: string = "Xatolik") => {
+    // ... (avvalgidek)
     let errorMessage = "Noma'lum xatolik yuz berdi.";
     if (error instanceof AxiosError && error.response) {
         if (error.response.data && error.response.data.message) {
@@ -41,6 +47,7 @@ const handleApiError = (error: any, contextMessage: string = "Xatolik") => {
 
 
 export default function POSPageWrapper() {
+  // ... (avvalgidek)
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
@@ -72,7 +79,7 @@ export default function POSPageWrapper() {
 
 function POSPage() {
   const queryClient = useQueryClient();
-
+  // ... (barcha state'lar avvalgidek qoladi)
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
@@ -99,15 +106,16 @@ function POSPage() {
     received_amount: "",
     mobile_provider: "Click"
   });
-  // isFetchingKitchenReceipt olib tashlandi
 
+  const [isDownloadingDocx, setIsDownloadingDocx] = useState(false); // DOCX yuklash uchun state
 
-  const getToken = () => {
-    if (typeof window !== "undefined") { return localStorage.getItem("token"); }
+  const getToken = () => { // ... (avvalgidek)
+     if (typeof window !== "undefined") { return localStorage.getItem("token"); }
     return null;
   };
 
-  const { data: categories = [], isLoading: isLoadingCategories, error: errorCategories } = useQuery({
+  // --- API So'rovlari (avvalgidek) ---
+  const { data: categories = [], isLoading: isLoadingCategories, error: errorCategories } = useQuery({ /* ... */ 
     queryKey: ['categories'],
     queryFn: async () => {
       const token = getToken();
@@ -117,8 +125,7 @@ function POSPage() {
     },
     onError: (err: any) => { console.error("Kategoriyalarni yuklashda xato:", err); }
   });
-
-  const { data: products = [], isLoading: isLoadingProducts, error: errorProducts } = useQuery({
+  const { data: products = [], isLoading: isLoadingProducts, error: errorProducts } = useQuery({ /* ... */ 
     queryKey: ['products'],
     queryFn: async () => {
       const token = getToken();
@@ -128,8 +135,7 @@ function POSPage() {
     },
      onError: (err: any) => { console.error("Mahsulotlarni yuklashda xato:", err); }
   });
-
-  const { data: tables = [], isLoading: isLoadingTables, error: errorTables } = useQuery({
+  const { data: tables = [], isLoading: isLoadingTables, error: errorTables } = useQuery({ /* ... */
     queryKey: ['tables'],
     queryFn: async () => {
       const token = getToken();
@@ -139,14 +145,12 @@ function POSPage() {
     },
     refetchInterval: 10000, 
     onError: (err: any) => { console.error("Stollarni yuklashda xato:", err); }
-  });
-
-  useEffect(() => {
+   });
+  useEffect(() => { /* ... */
     const handler = setTimeout(() => { setDebouncedHistorySearch(historySearchQuery); }, 300);
     return () => clearTimeout(handler);
-  }, [historySearchQuery]);
-
-  const { data: orderHistory = [], isLoading: isHistoryLoading, error: historyError, refetch: refetchHistory } = useQuery({
+   }, [historySearchQuery]);
+  const { data: orderHistory = [], isLoading: isHistoryLoading, error: historyError, refetch: refetchHistory } = useQuery({ /* ... */
     queryKey: ['orderHistory', debouncedHistorySearch],
     queryFn: async ({ queryKey }) => {
       const [, searchTerm] = queryKey;
@@ -158,9 +162,9 @@ function POSPage() {
     },
     enabled: showHistoryDialog,
     onError: (err: any) => { console.error("Buyurtmalar tarixini yuklashda xato:", err); }
-  });
+   });
 
-  const formatDateTime = (d: string | Date | undefined, format: 'datetime' | 'date' | 'time' = 'datetime'): string => {
+  const formatDateTime = (d: string | Date | undefined, format: 'datetime' | 'date' | 'time' = 'datetime'): string => { // ... (avvalgidek)
     if (!d) return "N/A";
     try {
       const date = new Date(d);
@@ -170,11 +174,7 @@ function POSPage() {
     } catch (e) { return String(d); }
   };
 
-  // =========================================================================================
-  // === MIJOZ CHEKINI WINDOW.PRINT() ORQALI CHOP ETISH FUNKSIYASI ===
-  // =========================================================================================
-  const printReceiptViaWindowPrint = (orderData: any) => {
-    // ... (avvalgi javobdagi printReceiptViaWindowPrint funksiyasi, o'zgarishsiz)
+  const printReceiptViaWindowPrint = (orderData: any) => { /* ... (avvalgi kod, o'zgarishsiz) ... */
     if (!orderData || !orderData.id) {
         toast.error("Mijoz cheki uchun buyurtma ma'lumotlari topilmadi.");
         return;
@@ -182,7 +182,7 @@ function POSPage() {
     const companyDetails = {
         name: "SmartResto POS",
         address: "O'zbekiston, Toshkent sh.",
-        phone: "+998 99 123 45 67",
+        phone: "+998 99 123 45 67", // Telefon raqamini o'zgartirdim
         inn: "123456789",
         thankYouMessage: "Xaridingiz uchun rahmat!",
         additionalInfo: "Yana kutib qolamiz!",
@@ -245,7 +245,7 @@ function POSPage() {
                 @media print {
                     body { padding: 0; margin: 0; font-size: 9pt; }
                     .receipt { width: 100%; margin: 0; box-shadow: none; }
-                    @page { margin: 5mm; } 
+                    @page { margin: 5mm; size: 80mm auto; /* Termal printer uchun moslash */ } 
                 }
             </style>
         </head>
@@ -255,7 +255,7 @@ function POSPage() {
                     <h1>${companyDetails.name}</h1>
                     ${companyDetails.address ? `<p>${companyDetails.address}</p>` : ''}
                     ${companyDetails.phone ? `<p>Tel: ${companyDetails.phone}</p>` : ''}
-                  
+                    <!-- INNni kommentga oldim, sizda yo'q ekan ${companyDetails.inn ? `<p>INN: ${companyDetails.inn}</p>` : ''} -->
                 </div>
                 <hr class="dashed">
                 <h2 class="center">CHEK #${orderData.id}</h2>
@@ -311,32 +311,24 @@ function POSPage() {
     } else {
         toast.error("Mijoz cheki oynasini ochib bo'lmadi. Brauzeringizda pop-up'lar bloklangan bo'lishi mumkin.");
     }
-  };
+  }
 
-  // =========================================================================================
-  // === OSHXONA CHEKINI WINDOW.PRINT() ORQALI CHOP ETISH FUNKSIYASI ===
-  // =========================================================================================
-  const printKitchenReceiptViaWindowPrint = (orderData: any, receiptType: 'initial' | 'delta_added' | 'delta_cancelled' = 'initial', deltaItems: any[] | null = null) => {
+  const printKitchenReceiptViaWindowPrint = (orderData: any, receiptType: 'initial' | 'delta_added' | 'delta_cancelled' = 'initial', deltaItems: any[] | null = null) => { /* ... (avvalgi kod, o'zgarishsiz) ... */
     if (!orderData || !orderData.id) {
         toast.error("Oshxona cheki uchun buyurtma ma'lumotlari topilmadi.");
         return;
     }
-
-    const itemsToPrint = deltaItems || orderData.items; // Agar deltaItems berilsa, o'shalarni chop etamiz
-
+    const itemsToPrint = deltaItems || orderData.items;
     if (!Array.isArray(itemsToPrint) || itemsToPrint.length === 0) {
-        if (receiptType === 'initial') { // Faqat boshlang'ich buyurtmada bo'sh bo'lsa, xabar beramiz
-             // Bu holatda ham "YANGI BUYURTMA" degan chek chiqarish mumkin
-        } else {
+        if (receiptType === 'initial') {} else {
             toast.warn(`Oshxona cheki (${receiptType}) uchun mahsulotlar yo'q.`);
-            return; // O'zgarish bo'lmasa, delta cheklarni chiqarmaymiz
+            return;
         }
     }
-
     let itemsHtml = "";
     if (Array.isArray(itemsToPrint) && itemsToPrint.length > 0) {
         itemsToPrint.forEach((item: any) => {
-            const productName = item.product_details?.name || item.productName || 'Noma\'lum'; // productName delta uchun
+            const productName = item.product_details?.name || item.productName || 'Noma\'lum';
             const quantity = item.quantity;
             let reasonText = "";
             if (receiptType === 'delta_cancelled') {
@@ -344,7 +336,6 @@ function POSPage() {
             } else if (receiptType === 'delta_added') {
                 reasonText = ` <span style="color:green; font-style:italic;">(${item.reason || "Qo'shildi"})</span>`;
             }
-
             itemsHtml += `
                 <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ccc;">
                     <span style="font-size: 11pt; font-weight: bold; flex-grow: 1; word-break: break-word;">${productName}${reasonText}</span>
@@ -352,15 +343,12 @@ function POSPage() {
                 </div>
             `;
         });
-    } else if (receiptType === 'initial') { // Agar initial va items bo'sh bo'lsa
+    } else if (receiptType === 'initial') {
          itemsHtml = `<div style="padding: 4px 0; border-bottom: 1px dashed #ccc; text-align: center; font-weight: bold;">YANGI BUYURTMA (BO'SH)</div>`;
     }
-
-
     let title = `BUYURTMA #${orderData.id}`;
     if (receiptType === 'delta_added') title = `QO'SHIMCHA #${orderData.id}`;
     else if (receiptType === 'delta_cancelled') title = `BEKOR QILINDI #${orderData.id}`;
-    
     const kitchenReceiptContent = `
         <html>
         <head>
@@ -375,7 +363,7 @@ function POSPage() {
                  @media print {
                     body { padding: 0; margin: 0; font-size: 10pt; }
                     .receipt { width: 100%; margin: 0; box-shadow: none; }
-                    @page { margin: 3mm; } 
+                    @page { margin: 3mm; size: 80mm auto; } 
                 }
             </style>
         </head>
@@ -383,7 +371,7 @@ function POSPage() {
             <div class="receipt">
                 <h2 class="center">${title}</h2>
                 <hr class="dashed">
-                <p><strong>Vaqt:</strong> ${formatDateTime(new Date(), 'time')} (${formatDateTime(orderData.created_at, 'time')})</p>
+                <p><strong>Vaqt:</strong> ${formatDateTime(new Date(), 'time')} (Buyurtma: ${formatDateTime(orderData.created_at, 'time')})</p>
                 ${(orderData.table?.name || orderData.table_name) ? `<p><strong>Stol:</strong> ${orderData.table?.name || orderData.table_name}</p>` : ''}
                 <p><strong>Turi:</strong> ${orderData.order_type_display || orderData.order_type}</p>
                 ${orderData.created_by ? `<p><strong>Ofitsiant:</strong> ${(`${orderData.created_by.first_name || ''} ${orderData.created_by.last_name || ''}`).trim()}</p>` : ''}
@@ -402,7 +390,6 @@ function POSPage() {
         </body>
         </html>
     `;
-
     const printWindow = window.open('', `_blank_kitchen_${orderData.id}_${receiptType}`, 'width=320,height=400,scrollbars=yes,resizable=yes');
     if (printWindow) {
         printWindow.document.open();
@@ -412,10 +399,212 @@ function POSPage() {
     } else {
         toast.error("Oshxona cheki oynasini ochib bo'lmadi. Brauzeringizda pop-up'lar bloklangan bo'lishi mumkin.");
     }
+  }
+
+  // =========================================================================================
+  // === .DOCX CHEK GENERATSIYA VA YUKLAB OLISH FUNKSIYALARI ===
+  // =========================================================================================
+  const generateDocxReceiptBlob = async (orderData: any, type: 'customer' | 'kitchen') => {
+    if (!orderData || !orderData.id) {
+      toast.error(`${type === 'customer' ? 'Mijoz' : 'Oshxona'} cheki uchun buyurtma ma'lumotlari topilmadi.`);
+      throw new Error("Buyurtma ma'lumotlari yo'q");
+    }
+
+    const companyDetails = { // Buni o'zingizga moslang
+        name: "SmartResto POS",
+        address: "O'zbekiston, Toshkent sh.",
+        phone: "+998 99 123 45 67",
+    };
+
+    const children: Paragraph[] = [];
+    const commonTextProps = { font: "Arial", size: 20 }; // 10pt uchun 20 (yarim-point)
+
+    // Chek sarlavhasi
+    children.push(new Paragraph({
+        children: [new TextRun({ text: companyDetails.name, bold: true, size: 28, ...commonTextProps })],
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 100 },
+    }));
+    if (companyDetails.address) {
+        children.push(new Paragraph({ text: companyDetails.address, alignment: AlignmentType.CENTER, spacing: { after: 50 }, ...commonTextProps }));
+    }
+    if (companyDetails.phone) {
+        children.push(new Paragraph({ text: `Tel: ${companyDetails.phone}`, alignment: AlignmentType.CENTER, spacing: { after: 200 }, ...commonTextProps }));
+    }
+    
+    children.push(new Paragraph({ text: "-".repeat(35), alignment: AlignmentType.CENTER, spacing: { after: 100, before: 100 }, ...commonTextProps }));
+
+
+    if (type === 'customer') {
+        children.push(new Paragraph({
+            children: [new TextRun({ text: `CHEK #${orderData.id}`, bold: true, size: 24, ...commonTextProps })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+        }));
+        children.push(new Paragraph({ text: `Sana: ${formatDateTime(orderData.created_at, 'datetime')}`, spacing: { after: 50 }, ...commonTextProps }));
+        children.push(new Paragraph({ text: `Buyurtma turi: ${orderData.order_type_display || orderData.order_type}`, spacing: { after: 50 }, ...commonTextProps }));
+        if (orderData.created_by) {
+            children.push(new Paragraph({ text: `Ofitsiant: ${(`${orderData.created_by.first_name || ''} ${orderData.created_by.last_name || ''}`).trim()}`, spacing: { after: 50 }, ...commonTextProps }));
+        }
+        if (orderData.table?.name || orderData.table_name) {
+            children.push(new Paragraph({ text: `Stol: ${orderData.table?.name || orderData.table_name}`, spacing: { after: 50 }, ...commonTextProps }));
+        }
+        if (orderData.customer_name) {
+            children.push(new Paragraph({ text: `Mijoz: ${orderData.customer_name}`, spacing: { after: 50 }, ...commonTextProps }));
+        }
+    } else { // Oshxona cheki
+        let title = `BUYURTMA #${orderData.id}`;
+        // Agar receiptType ni orderData ichida saqlasangiz yoki alohida parametr qilsangiz, bu yerni moslashtirishingiz mumkin
+        // Misol uchun, oshxona chekida delta holatlarni ko'rsatish kerak bo'lsa. Hozircha 'initial' deb qabul qilamiz.
+        children.push(new Paragraph({
+            children: [new TextRun({ text: title, bold: true, size: 26, ...commonTextProps })],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 200 },
+        }));
+        children.push(new Paragraph({ text: `Vaqt: ${formatDateTime(new Date(), 'time')} (Buyurtma: ${formatDateTime(orderData.created_at, 'time')})`, spacing: { after: 50 }, ...commonTextProps }));
+        if (orderData.table?.name || orderData.table_name) {
+            children.push(new Paragraph({ text: `Stol: ${orderData.table?.name || orderData.table_name}`, spacing: { after: 50 }, ...commonTextProps }));
+        }
+        children.push(new Paragraph({ text: `Turi: ${orderData.order_type_display || orderData.order_type}`, spacing: { after: 50 }, ...commonTextProps }));
+        if (orderData.created_by) {
+            children.push(new Paragraph({ text: `Ofitsiant: ${(`${orderData.created_by.first_name || ''} ${orderData.created_by.last_name || ''}`).trim()}`, spacing: { after: 50 }, ...commonTextProps }));
+        }
+        if (orderData.comment) {
+            children.push(new Paragraph({ text: "-".repeat(35), alignment: AlignmentType.CENTER, spacing: { after: 100, before: 100 }, ...commonTextProps }));
+            children.push(new Paragraph({ text: `Izoh: ${orderData.comment}`, spacing: { after: 50 }, ...commonTextProps }));
+        }
+    }
+
+    children.push(new Paragraph({ text: "-".repeat(35), alignment: AlignmentType.CENTER, spacing: { after: 100, before: 100 }, ...commonTextProps }));
+
+    // Mahsulotlar jadvali
+    if (Array.isArray(orderData.items) && orderData.items.length > 0) {
+        if (type === 'customer') {
+            children.push(new Paragraph({ text: "Mahsulotlar:", bold: true, spacing: { after: 50 }, ...commonTextProps }));
+        }
+        const tableRows = [
+            new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: "Mahsulot", bold: true, ...commonTextProps })], width: { size: 45, type: WidthType.PERCENTAGE } }),
+                    new TableCell({ children: [new Paragraph({ text: "Miq.", bold: true, alignment: AlignmentType.CENTER, ...commonTextProps })], width: { size: 15, type: WidthType.PERCENTAGE } }),
+                    ...(type === 'customer' ? [
+                        new TableCell({ children: [new Paragraph({ text: "Narx", bold: true, alignment: AlignmentType.RIGHT, ...commonTextProps })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+                        new TableCell({ children: [new Paragraph({ text: "Jami", bold: true, alignment: AlignmentType.RIGHT, ...commonTextProps })], width: { size: 20, type: WidthType.PERCENTAGE } }),
+                    ] : [ // Oshxona uchun faqat mahsulot va miqdor
+                         new TableCell({ children: [new Paragraph({ text: "", ...commonTextProps })], width: { size: 40, type: WidthType.PERCENTAGE } }), // Bo'sh ustun
+                    ]),
+                ],
+            }),
+        ];
+
+        orderData.items.forEach((item: any) => {
+            const productName = item.product_details?.name || 'Noma\'lum';
+            const quantity = item.quantity.toString();
+            const unitPrice = type === 'customer' ? parseFloat(item.unit_price || 0).toLocaleString('uz-UZ') : '';
+            const totalItemPrice = type === 'customer' ? (parseFloat(item.unit_price || 0) * item.quantity).toLocaleString('uz-UZ') : '';
+
+            tableRows.push(new TableRow({
+                children: [
+                    new TableCell({ children: [new Paragraph({ text: productName, ...commonTextProps })] }),
+                    new TableCell({ children: [new Paragraph({ text: quantity, alignment: AlignmentType.CENTER, ...commonTextProps })] }),
+                    ...(type === 'customer' ? [
+                        new TableCell({ children: [new Paragraph({ text: unitPrice, alignment: AlignmentType.RIGHT, ...commonTextProps })] }),
+                        new TableCell({ children: [new Paragraph({ text: totalItemPrice, alignment: AlignmentType.RIGHT, ...commonTextProps })] }),
+                    ] : [
+                         new TableCell({ children: [new Paragraph({ text: "", ...commonTextProps })] }),
+                    ]),
+                ],
+            }));
+        });
+        children.push(new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+    } else {
+        children.push(new Paragraph({ text: "Mahsulotlar yo'q.", alignment: AlignmentType.CENTER, spacing: { after: 100 }, ...commonTextProps }));
+    }
+
+    children.push(new Paragraph({ text: "-".repeat(35), alignment: AlignmentType.CENTER, spacing: { after: 100, before: 100 }, ...commonTextProps }));
+
+    // Jami va to'lov ma'lumotlari (faqat mijoz cheki uchun)
+    if (type === 'customer') {
+        const totalAmount = parseFloat(orderData.total_price || 0);
+        const serviceFeePercent = parseFloat(orderData.actual_service_fee_percent || orderData.service_fee_percent || 0);
+        const serviceFeeAmount = (totalAmount * serviceFeePercent) / 100;
+        const finalPrice = parseFloat(orderData.final_price || 0);
+
+        children.push(new Paragraph({ text: `Jami (ovqatlar): ${totalAmount.toLocaleString('uz-UZ')} so'm`, alignment: AlignmentType.RIGHT, spacing: { after: 50 }, ...commonTextProps }));
+        if (serviceFeePercent > 0) {
+            children.push(new Paragraph({ text: `Xizmat haqi (${serviceFeePercent.toFixed(1)}%): ${serviceFeeAmount.toLocaleString('uz-UZ')} so'm`, alignment: AlignmentType.RIGHT, spacing: { after: 50 }, ...commonTextProps }));
+        }
+        children.push(new Paragraph({
+            children: [new TextRun({ text: `YAKUNIY NARX: ${finalPrice.toLocaleString('uz-UZ')} so'm`, bold: true, size: 22, ...commonTextProps })],
+            alignment: AlignmentType.RIGHT,
+            spacing: { after: 100 },
+        }));
+
+        if (orderData.payment) {
+            children.push(new Paragraph({ text: "-".repeat(35), alignment: AlignmentType.CENTER, spacing: { after: 100, before: 100 }, ...commonTextProps }));
+            children.push(new Paragraph({ text: `To'lov usuli: ${orderData.payment.method_display || orderData.payment.method}`, spacing: { after: 50 }, ...commonTextProps }));
+            if (orderData.payment.method === 'cash' && orderData.payment.received_amount) {
+                children.push(new Paragraph({ text: `Olingan summa: ${parseFloat(orderData.payment.received_amount).toLocaleString('uz-UZ')} so'm`, spacing: { after: 50 }, ...commonTextProps }));
+                children.push(new Paragraph({ text: `Qaytim: ${parseFloat(orderData.payment.change_amount || 0).toLocaleString('uz-UZ')} so'm`, spacing: { after: 50 }, ...commonTextProps }));
+            }
+             if (orderData.payment.method === 'mobile' && orderData.payment.mobile_provider) {
+                children.push(new Paragraph({ text: `Mobil provayder: ${orderData.payment.mobile_provider}`, spacing: { after: 50 }, ...commonTextProps }));
+            }
+        }
+        children.push(new Paragraph({ text: "-".repeat(35), alignment: AlignmentType.CENTER, spacing: { after: 100, before: 100 }, ...commonTextProps }));
+        children.push(new Paragraph({ text: companyDetails.thankYouMessage, alignment: AlignmentType.CENTER, spacing: { after: 50 }, ...commonTextProps }));
+        if (companyDetails.additionalInfo) {
+             children.push(new Paragraph({ text: companyDetails.additionalInfo, alignment: AlignmentType.CENTER, spacing: { after: 50 }, ...commonTextProps }));
+        }
+    }
+
+
+    const doc = new Document({
+        sections: [{
+            properties: {
+                page: {
+                    size: { width: 2267.7, height: 10000 }, // 80mm kenglik uchun (80mm * 28.3465 points/mm)
+                    margin: { top: 283.465, right: 141.732, bottom: 283.465, left: 141.732 }, // 10mm, 5mm, 10mm, 5mm
+                },
+            },
+            children: children,
+        }],
+        styles: {
+            default: {
+                document: {
+                    run: { font: "Arial", size: 20 }, // Barcha matn uchun standart shrift va o'lcham
+                },
+            },
+        },
+    });
+
+    try {
+      const blob = await Packer.toBlob(doc);
+      return blob;
+    } catch (error) {
+      console.error(`Error generating ${type} DOCX:`, error);
+      throw new Error(`DOCX ${type} chekini yaratishda xatolik: ${(error as Error).message}`);
+    }
   };
-  
-  const finishEditingInternal = (informUser: boolean = false) => {
-    // ... (o'zgarishsiz)
+
+  const handleDownloadDocxReceipt = async (orderData: any, type: 'customer' | 'kitchen') => {
+    if (isDownloadingDocx) return;
+    setIsDownloadingDocx(true);
+    try {
+      const blob = await generateDocxReceiptBlob(orderData, type);
+      const filename = `${type === 'customer' ? 'Mijoz_Cheki' : 'Oshxona_Cheki'}_${orderData.id}.docx`;
+      saveAs(blob, filename);
+      toast.success(`${type === 'customer' ? 'Mijoz' : 'Oshxona'} cheki DOCX formatida yuklandi.`);
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setIsDownloadingDocx(false);
+    }
+  };
+
+
+  // --- Qolgan Mutatsiyalar va Funksiyalar (avvalgidek, faqat chek chiqarish joylari o'zgartiriladi) ---
+  const finishEditingInternal = (informUser: boolean = false) => { /* ... */ 
     const previousId = editingOrderId;
     setEditingOrderId(null);
     setOrderToEdit(null);
@@ -431,10 +620,8 @@ function POSPage() {
       console.log(`Buyurtma #${previousId} bilan ishlash yakunlandi/bekor qilindi.`);
     }
   };
-
-  const loadOrderForEditing = async (orderIdToLoad: number, associatedTable: any = null) => {
-    // ... (o'zgarishsiz)
-     const token = getToken();
+  const loadOrderForEditing = async (orderIdToLoad: number, associatedTable: any = null) => { /* ... */ 
+    const token = getToken();
     if (!token || !orderIdToLoad) { 
         toast.error("Tahrirlash uchun ID yoki token yetarli emas.");
         return; 
@@ -500,8 +687,7 @@ function POSPage() {
       setIsEditLoadingManual(false);
     }
   };
-
-  const createOrderMutation = useMutation({
+  const createOrderMutation = useMutation({ /* ... */ 
     mutationFn: async (orderData: any) => {
       const token = getToken();
       if (!token) throw new Error("Avtorizatsiya tokeni topilmadi!");
@@ -512,7 +698,6 @@ function POSPage() {
     },
     onSuccess: (data) => {
       toast.success(`Buyurtma #${data.id} muvaffaqiyatli yaratildi!`);
-      // OSHXONA CHEKINI WINDOW.PRINT ORQALI CHOP ETISH
       if (data && data.id) {
         printKitchenReceiptViaWindowPrint(data, 'initial'); 
       }
@@ -523,7 +708,6 @@ function POSPage() {
       if (showHistoryDialog) { queryClient.invalidateQueries({ queryKey: ['orderHistory'] }); }
     },
     onError: (error: any, variables: any) => {
-      // ... (o'zgarishsiz)
       let msg = "Buyurtma yaratishda noma'lum xato!";
       if (error.response?.data) {
         const errorData = error.response.data;
@@ -541,8 +725,7 @@ function POSPage() {
       toast.error(`Buyurtma yaratishda xato: ${msg}`);
     }
   });
-
-  const updateOrderItemsMutation = useMutation({
+  const updateOrderItemsMutation = useMutation({ /* ... */ 
     mutationFn: async ({ orderId, payload }: { orderId: number, payload: any }) => {
       const token = getToken();
       if (!token) throw new Error("Avtorizatsiya tokeni topilmadi!");
@@ -577,7 +760,6 @@ function POSPage() {
         }
       });
       
-      // OSHXONA DELTA CHEKLARINI WINDOW.PRINT ORQALI CHOP ETISH
       if (addedOrIncreasedItems.length > 0) {
         printKitchenReceiptViaWindowPrint(updatedOrderFromServer, 'delta_added', addedOrIncreasedItems);
       }
@@ -593,7 +775,6 @@ function POSPage() {
       if (showHistoryDialog) { refetchHistory(); }
     },
     onError: (error: any) => {
-        // ... (o'zgarishsiz)
         let errorMsg = "O'zgarishlarni saqlashda xato yuz berdi.";
         if (error.response?.data) {
             const errorData = error.response.data;
@@ -607,8 +788,7 @@ function POSPage() {
         toast.error(`O'zgarishlarni saqlashda xato: ${errorMsg}`);
     }
   });
-
-  const checkoutMutation = useMutation({
+  const checkoutMutation = useMutation({ /* ... */
     mutationFn: async ({ tableId, paymentData }: { tableId: number, paymentData: any }) => {
       const token = getToken();
       if (!token) throw new Error("Avtorizatsiya tokeni topilmadi!");
@@ -620,9 +800,7 @@ function POSPage() {
       toast.success(`Stol #${variables.tableId} uchun to'lov amalga oshirildi! Buyurtma #${data.id} yopildi.`);
       
       if (data && data.id) {
-        printReceiptViaWindowPrint(data); // Mijoz cheki
-        // To'lovdan keyin oshxona chekini chiqarish shart emas, lekin agar kerak bo'lsa:
-        // printKitchenReceiptViaWindowPrint(data, 'initial'); 
+        printReceiptViaWindowPrint(data); 
       }
       
       setShowCheckoutDialog(false);
@@ -635,7 +813,6 @@ function POSPage() {
       }
     },
     onError: (error: any, variables) => {
-        // ... (o'zgarishsiz)
         let msg = "To'lovni amalga oshirishda xato.";
         if (error.response?.data) {
             const errorData = error.response.data;
@@ -649,9 +826,8 @@ function POSPage() {
             queryClient.invalidateQueries({ queryKey: ['tables'] });
         }
     }
-  });
-  
-  const reorderMutation = useMutation({
+   });
+  const reorderMutation = useMutation({ /* ... */
     mutationFn: async (orderData: any) => {
       const token = getToken();
       if (!token) throw new Error("Avtorizatsiya tokeni topilmadi!");
@@ -666,7 +842,6 @@ function POSPage() {
     onSuccess: (response, variables: any) => {
       const { newData, originalOrderId } = response;
       toast.success(`Buyurtma #${originalOrderId} dan nusxa (#${newData.id}) yaratildi!`);
-      // QAYTA BUYURTMA UCHUN OSHXONA CHEKI
       if (newData && newData.id) { 
         printKitchenReceiptViaWindowPrint(newData, 'initial'); 
       }
@@ -676,7 +851,6 @@ function POSPage() {
       queryClient.invalidateQueries({ queryKey: ['orderHistory'] });
     },
     onError: (error: any, variables: any) => {
-        // ... (o'zgarishsiz)
         let msg = "Qayta buyurtma berishda noma'lum xato!";
         if (error.response?.data) {
             const errorData = error.response.data;
@@ -694,10 +868,9 @@ function POSPage() {
         setSubmitEditError(`Xatolik: ${msg}`);
         toast.error(`Qayta buyurtma berishda xato: ${msg}`);
     }
-  });
+   });
 
-  // filteredProducts, uniqueZones, currentPanelItems, currentPanelTotal - o'zgarishsiz
-  const filteredProducts = useMemo(() => {
+  const filteredProducts = useMemo(() => { /* ... */ 
     if (!Array.isArray(products)) return [];
     return products.filter((p: any) =>
       p.is_active &&
@@ -705,8 +878,7 @@ function POSPage() {
       p.name?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [products, selectedCategory, searchQuery]);
-
-  const uniqueZones = useMemo(() => {
+  const uniqueZones = useMemo(() => { /* ... */ 
     if (!Array.isArray(tables)) return ['all'];
     const zones = tables.map((t: any) => t.zone || 'N/A');
     const uniqueSet = new Set(zones);
@@ -719,14 +891,12 @@ function POSPage() {
     });
     return ['all', ...sortedZones];
   }, [tables]);
-
-  const currentPanelItems = useMemo(() => {
+  const currentPanelItems = useMemo(() => { /* ... */
     if (editingOrderId && orderToEdit?.items) { return orderToEdit.items; }
     else if (!editingOrderId) { return cart; }
     return [];
-  }, [editingOrderId, orderToEdit, cart]);
-
-  const currentPanelTotal = useMemo(() => {
+   }, [editingOrderId, orderToEdit, cart]);
+  const currentPanelTotal = useMemo(() => { /* ... */ 
     let itemsTotal = 0;
     if (editingOrderId && orderToEdit?.items) {
       itemsTotal = orderToEdit.items.reduce((sum: number, item: any) => sum + (Number(item.unit_price || 0) * item.quantity), 0);
@@ -735,12 +905,10 @@ function POSPage() {
     }
     return itemsTotal;
   }, [editingOrderId, orderToEdit, cart]);
-
   const isMutationLoading = createOrderMutation.isPending || updateOrderItemsMutation.isPending || checkoutMutation.isPending || reorderMutation.isPending;
   const isAnyLoading = isMutationLoading || isLoadingProducts || isLoadingCategories || isEditLoadingManual || isLoadingTables;
 
-  // Savat va buyurtma bilan ishlash funksiyalari - o'zgarishsiz
-  const addToCart = (product: any) => {
+  const addToCart = (product: any) => { /* ... */
     if (editingOrderId) { 
       handleLocalAddItemFromProductList(product);
       return;
@@ -754,9 +922,8 @@ function POSPage() {
       if (exist) return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       return [...prev, { id: product.id, product: product, quantity: 1 }];
     });
-  };
-
-  const decreaseQuantity = (item: any) => {
+   };
+  const decreaseQuantity = (item: any) => { /* ... */ 
     if (editingOrderId && orderToEdit) {
       handleLocalEditQuantityChange(item.product_id || item.product, -1);
       return;
@@ -768,16 +935,14 @@ function POSPage() {
       return prev.map((i) => i.id === item.id ? { ...i, quantity: Math.max(0, i.quantity - 1) } : i);
     });
   };
-
-  const increaseQuantity = (item: any) => {
+  const increaseQuantity = (item: any) => { /* ... */ 
     if (editingOrderId && orderToEdit) {
         handleLocalEditQuantityChange(item.product_id || item.product, 1);
         return;
     }
     setCart((prev) => prev.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
   };
-  
-  const handleLocalEditQuantityChange = (productId: number, change: number) => {
+  const handleLocalEditQuantityChange = (productId: number, change: number) => { /* ... */ 
     if (!editingOrderId || !orderToEdit || updateOrderItemsMutation.isPending) return;
     setOrderToEdit((prevOrder: any) => {
       if (!prevOrder) return null;
@@ -792,8 +957,7 @@ function POSPage() {
       return { ...prevOrder, items: updatedItems };
     });
   };
-
-  const handleLocalAddItemFromProductList = (product: any) => {
+  const handleLocalAddItemFromProductList = (product: any) => { /* ... */
     if (!editingOrderId || !orderToEdit || !product || updateOrderItemsMutation.isPending || isEditLoadingManual) return;
     setOrderToEdit((prevOrder: any) => {
       if (!prevOrder) return null;
@@ -812,10 +976,8 @@ function POSPage() {
       }
       return { ...prevOrder, items: updatedItems };
     });
-  };
-  
-  const submitOrder = () => {
-    // ... (o'zgarishsiz)
+   };
+  const submitOrder = () => { /* ... */ 
     if (editingOrderId) return;
     if (cart.length === 0) { 
         toast.warn("Savat bo‘sh!");
@@ -852,9 +1014,7 @@ function POSPage() {
     };
     createOrderMutation.mutate(orderData);
   };
-
-  const submitEditedOrderChanges = () => {
-    // ... (o'zgarishsiz)
+  const submitEditedOrderChanges = () => { /* ... */ 
     if (!editingOrderId || !orderToEdit || !originalOrderItems || updateOrderItemsMutation.isPending || isEditLoadingManual) {
       toast.warn("O'zgarishlarni saqlash uchun shartlar bajarilmadi.");
       setSubmitEditError("O'zgarishlarni saqlash uchun shartlar bajarilmadi.");
@@ -899,9 +1059,7 @@ function POSPage() {
     }
     updateOrderItemsMutation.mutate({ orderId: editingOrderId, payload: { items_operations: operations } });
   };
-  
-  const reorderToSameTable = (order: any) => {
-    // ... (o'zgarishsiz)
+  const reorderToSameTable = (order: any) => { /* ... */ 
     if (isAnyLoading) { 
         toast.warn("Boshqa amal bajarilmoqda, iltimos kuting.");
          return; 
@@ -925,9 +1083,7 @@ function POSPage() {
     };
     reorderMutation.mutate({ ...orderData, originalOrderId: order.id, originalOrderData: order });
   };
-
-  const handleCustomerInfoSave = () => {
-    // ... (o'zgarishsiz)
+  const handleCustomerInfoSave = () => { /* ... */ 
     const phoneDigits = customerInfo.phone.replace(/\D/g, '');
     if (!customerInfo.name || phoneDigits.length < 12 ) { 
         toast.error("Ism va telefon raqamini to'liq kiriting (kamida 12 raqam).");
@@ -943,9 +1099,7 @@ function POSPage() {
     setSubmitEditError(null);
     toast.success("Mijoz ma'lumotlari saqlandi.");
   };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // ... (o'zgarishsiz)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => { /* ... */
     const prefix = "+998";
     let value = e.target.value;
     if (!value.startsWith(prefix)) {
@@ -959,10 +1113,8 @@ function POSPage() {
     if (numbers.length > 7) formattedNumber += " " + numbers.substring(7, 9);
     
     setCustomerInfo(prev => ({ ...prev, phone: formattedNumber.slice(0, 17) }));
-  };
-  
-  const cancelEditing = () => {
-    // ... (o'zgarishsiz)
+   };
+  const cancelEditing = () => { /* ... */ 
     if (updateOrderItemsMutation.isPending) { 
         toast.warn("Saqlash jarayoni tugashini kuting.");
         return; 
@@ -970,12 +1122,10 @@ function POSPage() {
     finishEditingInternal(true);
     toast.info("Tahrirlash bekor qilindi.");
   };
-
-  const handleLogout = () => { // ... (o'zgarishsiz)
+  const handleLogout = () => { /* ... */ 
     setShowLogoutDialog(true);
   };
-
-  const confirmLogoutAction = () => { // ... (o'zgarishsiz)
+  const confirmLogoutAction = () => { /* ... */ 
     if (typeof window !== "undefined") { 
         localStorage.removeItem("token"); 
         localStorage.removeItem("user");
@@ -990,9 +1140,8 @@ function POSPage() {
   return (
     <TooltipProvider>
       <div className="flex h-screen flex-col bg-muted/40">
-        
+        {/* ... (Header JSX avvalgidek) ... */}
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 sm:px-6 shrink-0">
-           {/* ... (Header JSX o'zgarishsiz) ... */}
            <div className="flex items-center gap-2 sm:gap-4">
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0" onClick={handleLogout}><LogOut className="h-5 w-5" /></Button>
@@ -1039,8 +1188,8 @@ function POSPage() {
         </header>
 
         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-0 overflow-hidden">
+          {/* ... (Mahsulotlar paneli JSX avvalgidek) ... */}
           <div className="md:col-span-2 lg:col-span-3 flex flex-col border-r border-border overflow-hidden">
-            {/* ... (Mahsulotlar paneli JSX o'zgarishsiz) ... */}
             <div className="border-b border-border p-4 shrink-0">
               <div className="relative mb-4">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1089,21 +1238,39 @@ function POSPage() {
                 {editingOrderId && orderToEdit ? (
                   <>
                     {orderToEdit.table && <Badge variant="outline" className="hidden sm:inline-flex text-xs px-1.5 py-0.5">Stol {orderToEdit.table.name}</Badge>}
+                    {/* Mijoz Cheki (Chop etish) */}
                     <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" 
                             onClick={() => printReceiptViaWindowPrint(orderToEdit)} 
                             disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}>
                              <Printer className="h-4 w-4" />
                         </Button>
-                    </TooltipTrigger><TooltipContent><p>Mijoz Cheki (Hozirgi)</p></TooltipContent></Tooltip>
+                    </TooltipTrigger><TooltipContent><p>Mijoz Cheki (Chop etish)</p></TooltipContent></Tooltip>
+                    {/* Mijoz Cheki (DOCX Yuklab olish) */}
+                    <Tooltip><TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" 
+                            onClick={() => handleDownloadDocxReceipt(orderToEdit, 'customer')} 
+                            disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading || isDownloadingDocx}>
+                             {isDownloadingDocx ? <Loader2 className="h-4 w-4 animate-spin"/> : <Download className="h-4 w-4 text-blue-500" />}
+                        </Button>
+                    </TooltipTrigger><TooltipContent><p>Mijoz Cheki (DOCX)</p></TooltipContent></Tooltip>
                     
+                    {/* Oshxona Cheki (Chop etish) */}
                     <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" 
                             onClick={() => printKitchenReceiptViaWindowPrint(orderToEdit, 'initial')} 
-                            disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}> {/* isFetchingKitchenReceipt olib tashlandi */}
-                            <Printer className="h-4 w-4 text-orange-500" /> {/* Loader olib tashlandi */}
+                            disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}>
+                            <Printer className="h-4 w-4 text-orange-500" />
                         </Button>
-                    </TooltipTrigger><TooltipContent><p>Oshxona Cheki (To'liq)</p></TooltipContent></Tooltip>
+                    </TooltipTrigger><TooltipContent><p>Oshxona Cheki (Chop etish)</p></TooltipContent></Tooltip>
+                     {/* Oshxona Cheki (DOCX Yuklab olish) */}
+                    <Tooltip><TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" 
+                            onClick={() => handleDownloadDocxReceipt(orderToEdit, 'kitchen')} 
+                            disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading || isDownloadingDocx}>
+                             {isDownloadingDocx ? <Loader2 className="h-4 w-4 animate-spin"/> : <Download className="h-4 w-4 text-green-500" />}
+                        </Button>
+                    </TooltipTrigger><TooltipContent><p>Oshxona Cheki (DOCX)</p></TooltipContent></Tooltip>
                     
                     <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={cancelEditing} disabled={isAnyLoading || updateOrderItemsMutation.isPending}>
@@ -1111,8 +1278,8 @@ function POSPage() {
                         </Button>
                     </TooltipTrigger><TooltipContent><p>Bekor qilish</p></TooltipContent></Tooltip>
                   </>
-                ) : !editingOrderId ? (
-                   <> {/* ... (Yangi buyurtma uchun knopkalar o'zgarishsiz) ... */}
+                ) : !editingOrderId ? ( /* ... (avvalgidek) ... */ 
+                   <> 
                     {orderType === "dine_in" && (
                       <>
                         {selectedTableId && tables.find((t: any) => t.id === selectedTableId) && 
@@ -1135,8 +1302,8 @@ function POSPage() {
                 ) : null}
               </div>
             </div>
-            <ScrollArea className="flex-1 p-4">
-              {/* ... (Panel ichidagi mahsulotlar ro'yxati JSX o'zgarishsiz) ... */}
+            {/* ... (Panel ichi va pastki qismi JSX avvalgidek) ... */}
+             <ScrollArea className="flex-1 p-4">
               {isEditLoadingManual ? <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin mr-2" /> Buyurtma yuklanmoqda...</div> :
                editErrorManual ? <div className="text-destructive p-4 text-center">{editErrorManual} <Button variant="link" onClick={() => editingOrderId && loadOrderForEditing(editingOrderId)}>Qayta urinish</Button></div> :
                currentPanelItems.length === 0 ? <div className="text-muted-foreground text-center p-10"><ShoppingCart className="mx-auto h-12 w-12 mb-2" />{editingOrderId ? "Buyurtmada mahsulot yo'q" : "Savat bo'sh"}</div> :
@@ -1167,7 +1334,6 @@ function POSPage() {
               {submitEditError && <p className="text-center text-destructive text-xs mt-4 p-2 bg-destructive/10 rounded">{submitEditError}</p>}
             </ScrollArea>
             <div className="border-t border-border p-4 shrink-0 bg-muted/20">
-              {/* ... (Panel pastki qismi JSX o'zgarishsiz) ... */}
               <div className="space-y-1 mb-4 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Jami (mahsulot):</span><span className="font-semibold">{currentPanelTotal.toLocaleString('uz-UZ')} so‘m</span></div>
                 {editingOrderId && orderToEdit && (
@@ -1238,8 +1404,7 @@ function POSPage() {
           </div>
         </div>
 
-        {/* Dialoglar (o'zgarishsiz) */}
-        {/* ... (Stol tanlash, Mijoz ma'lumotlari, Chiqish, Buyurtmalar tarixi, To'lov dialoglari JSX o'zgarishsiz) ... */}
+        {/* ... (Barcha Dialoglar JSX avvalgidek) ... */}
         <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
           <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col">
             <DialogHeader><DialogTitle>Stol tanlash</DialogTitle><DialogDescription>Buyurtma uchun stol tanlang yoki band stolni oching.</DialogDescription></DialogHeader>
