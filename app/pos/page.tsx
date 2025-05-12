@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios"; // AxiosError importi kerak bo'lishi mumkin
-import { toast, ToastContainer } from 'react-toastify'; // Toastify importi
-import 'react-toastify/dist/ReactToastify.css';     // Toastify CSS importi
+import axios, { AxiosError } from "axios";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Ikonkalar
 import { LogOut, Search, ShoppingBag, ShoppingCart, Truck, Users, Minus, Plus as PlusIcon, History, Eye, Edit, Loader2, X, Save, RotateCcw, CheckCircle, Repeat, Printer } from "lucide-react";
@@ -20,13 +20,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const API_BASE_URL = "https://oshxonacopy.pythonanywhere.com/api"; // Promtdagi Base URL
+const API_BASE_URL = "https://oshxonacopy.pythonanywhere.com/api"; // Bu API endi faqat ma'lumot olish/yuborish uchun kerak
 
-// --- Toastify uchun yordamchi funksiya (xatolikni qayta ishlash uchun) ---
 const handleApiError = (error: any, contextMessage: string = "Xatolik") => {
     let errorMessage = "Noma'lum xatolik yuz berdi.";
     if (error instanceof AxiosError && error.response) {
-        // Backenddan kelgan xatolik xabari
         if (error.response.data && error.response.data.message) {
             errorMessage = error.response.data.message;
         } else if (error.response.data && error.response.data.detail) {
@@ -46,9 +44,9 @@ export default function POSPageWrapper() {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        refetchOnWindowFocus: false, // Buni true qilish mumkin agar kerak bo'lsa
+        refetchOnWindowFocus: false,
         staleTime: 1 * 60 * 1000, 
-        retry: 1, // Xatolik bo'lsa 1 marta qayta urinish
+        retry: 1,
       },
     },
   }));
@@ -75,11 +73,8 @@ export default function POSPageWrapper() {
 function POSPage() {
   const queryClient = useQueryClient();
 
-  // === Asosiy State'lar ===
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // === O'ng Panel State'lari ===
   const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
   const [orderToEdit, setOrderToEdit] = useState<any | null>(null);
   const [originalOrderItems, setOriginalOrderItems] = useState<any[]>([]);
@@ -87,35 +82,24 @@ function POSPage() {
   const [editErrorManual, setEditErrorManual] = useState<string | null>(null);
   const [submitEditError, setSubmitEditError] = useState<string | null>(null);
   const [cart, setCart] = useState<any[]>([]);
-
-  // === Yangi Buyurtma Uchun Qo'shimcha State'lar ===
   const [orderType, setOrderType] = useState("dine_in");
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
   const [customerInfo, setCustomerInfo] = useState({ name: "", phone: "+998 ", address: "" });
   const [showTableDialog, setShowTableDialog] = useState(false);
   const [showCustomerDialog, setShowCustomerDialog] = useState(false);
   const [selectedZoneFilter, setSelectedZoneFilter] = useState('all');
-
-  // === Dialog Oynalari State'lari ===
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-
-  // === Buyurtmalar Tarixi State'lari ===
   const [historySearchQuery, setHistorySearchQuery] = useState("");
   const [debouncedHistorySearch, setDebouncedHistorySearch] = useState("");
-
-  // === To'lov uchun State'lar ===
   const [showCheckoutDialog, setShowCheckoutDialog] = useState(false);
   const [tableForCheckout, setTableForCheckout] = useState<any | null>(null);
   const [paymentDetails, setPaymentDetails] = useState({
     method: "cash",
     received_amount: "",
-    mobile_provider: "Click" // Promtda yo'q edi, lekin kodingizda bor
+    mobile_provider: "Click"
   });
-
-  // === Chekni alohida olish uchun State ===
-  const [isFetchingReceipt, setIsFetchingReceipt] = useState(false);
-  const [isFetchingKitchenReceipt, setIsFetchingKitchenReceipt] = useState(false);
+  // isFetchingKitchenReceipt olib tashlandi
 
 
   const getToken = () => {
@@ -123,22 +107,15 @@ function POSPage() {
     return null;
   };
 
-  // --- API So'rovlari uchun useQuery hooklari ---
   const { data: categories = [], isLoading: isLoadingCategories, error: errorCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       const token = getToken();
-      if (!token) { 
-        // toast.error("Avtorizatsiya tokeni topilmadi. Iltimos qayta kiring.");
-        throw new Error("Token topilmadi"); 
-      }
+      if (!token) { throw new Error("Token topilmadi"); }
       const res = await axios.get(`${API_BASE_URL}/categories/`, { headers: { Authorization: `Bearer ${token}` } });
       return res.data || [];
     },
-    onError: (err: any) => {
-      console.error("Kategoriyalarni yuklashda xato:", err);
-      // handleApiError(err, "Kategoriyalarni yuklash"); // Agar kerak bo'lsa
-    }
+    onError: (err: any) => { console.error("Kategoriyalarni yuklashda xato:", err); }
   });
 
   const { data: products = [], isLoading: isLoadingProducts, error: errorProducts } = useQuery({
@@ -149,9 +126,7 @@ function POSPage() {
       const res = await axios.get(`${API_BASE_URL}/products/`, { headers: { Authorization: `Bearer ${token}` } });
       return res.data || [];
     },
-     onError: (err: any) => {
-      console.error("Mahsulotlarni yuklashda xato:", err);
-    }
+     onError: (err: any) => { console.error("Mahsulotlarni yuklashda xato:", err); }
   });
 
   const { data: tables = [], isLoading: isLoadingTables, error: errorTables } = useQuery({
@@ -163,9 +138,7 @@ function POSPage() {
       return res.data || [];
     },
     refetchInterval: 10000, 
-    onError: (err: any) => {
-      console.error("Stollarni yuklashda xato:", err);
-    }
+    onError: (err: any) => { console.error("Stollarni yuklashda xato:", err); }
   });
 
   useEffect(() => {
@@ -183,13 +156,10 @@ function POSPage() {
       const res = await axios.get(url, { headers: { Authorization: `Bearer ${token}` } });
       return res.data || [];
     },
-    enabled: showHistoryDialog, // Faqat dialog ochilganda ishga tushadi
-    onError: (err: any) => {
-      console.error("Buyurtmalar tarixini yuklashda xato:", err);
-    }
+    enabled: showHistoryDialog,
+    onError: (err: any) => { console.error("Buyurtmalar tarixini yuklashda xato:", err); }
   });
 
-  // --- Yordamchi funksiyalar ---
   const formatDateTime = (d: string | Date | undefined, format: 'datetime' | 'date' | 'time' = 'datetime'): string => {
     if (!d) return "N/A";
     try {
@@ -201,145 +171,251 @@ function POSPage() {
   };
 
   // =========================================================================================
-  // === CHEK CHOP ETISH FUNKSIYALARI (BACKEND API ORQALI) ===
+  // === MIJOZ CHEKINI WINDOW.PRINT() ORQALI CHOP ETISH FUNKSIYASI ===
   // =========================================================================================
-
-  const handlePrintKitchenReceiptViaApi = async (orderDataForKitchen: any, receiptType: 'initial' | 'delta_added' | 'delta_cancelled' = 'initial') => {
-    if (!orderDataForKitchen || !orderDataForKitchen.id) {
-        toast.error("Oshxona cheki uchun buyurtma IDsi topilmadi.");
+  const printReceiptViaWindowPrint = (orderData: any) => {
+    // ... (avvalgi javobdagi printReceiptViaWindowPrint funksiyasi, o'zgarishsiz)
+    if (!orderData || !orderData.id) {
+        toast.error("Mijoz cheki uchun buyurtma ma'lumotlari topilmadi.");
         return;
     }
-    if (!Array.isArray(orderDataForKitchen.items) || orderDataForKitchen.items.length === 0) {
-        toast.warn("Oshxona cheki uchun mahsulotlar yo'q. Faqat buyurtma ochilgani haqida xabar yuborilishi mumkin.");
-        // Agar bo'sh bo'lsa ham yuborish kerak bo'lsa, itemsni moslashtiring
-    }
-    if (isFetchingKitchenReceipt) return;
-    setIsFetchingKitchenReceipt(true);
-    setSubmitEditError(null);
-
-    // Promtga mos payload
-    const payload = {
-        orderId: orderDataForKitchen.id,
-        receiptType: receiptType,
-        tableName: orderDataForKitchen.order_type === 'dine_in' ? (orderDataForKitchen.table?.name || orderDataForKitchen.table_name || null) : null,
-        orderTypeDisplay: orderDataForKitchen.order_type_display || orderDataForKitchen.order_type,
-        orderTime: formatDateTime(orderDataForKitchen.created_at, 'time'), // "HH:MM" formatida
-        waiterName: orderDataForKitchen.created_by ? `${orderDataForKitchen.created_by.first_name || ''} ${orderDataForKitchen.created_by.last_name || ''}`.trim() : null,
-        items: orderDataForKitchen.items.map((item: any) => ({
-            productName: item.product_details?.name || 'Noma\'lum',
-            quantity: item.quantity,
-            reason: receiptType === 'delta_cancelled' ? (item.reason || "O'chirildi/Kamaytirildi") : (receiptType === 'delta_added' ? (item.reason || "Qo'shildi") : null)
-        })),
-        orderComment: orderDataForKitchen.comment || null
+    const companyDetails = {
+        name: "SmartResto POS",
+        address: "O'zbekiston, Toshkent sh.",
+        phone: "+998 99 123 45 67",
+        inn: "123456789",
+        thankYouMessage: "Xaridingiz uchun rahmat!",
+        additionalInfo: "Yana kutib qolamiz!",
     };
-    
-    // Agar items bo'sh bo'lsa va 'initial' bo'lsa, maxsus item qo'shish
-    if (payload.items.length === 0 && receiptType === 'initial') {
-        payload.items = [{ productName: "YANGI BUYURTMA (BO'SH)", quantity: 1, reason: null }];
+    let itemsHtml = "";
+    if (Array.isArray(orderData.items)) {
+        orderData.items.forEach((item: any) => {
+            const productName = item.product_details?.name || 'Noma\'lum mahsulot';
+            const quantity = item.quantity;
+            const unitPrice = parseFloat(item.unit_price || 0);
+            const totalItemPrice = unitPrice * quantity;
+            itemsHtml += `
+                <tr>
+                    <td style="word-break: break-word;">${productName}</td>
+                    <td style="text-align:center;">${quantity}</td>
+                    <td style="text-align:right;">${unitPrice.toLocaleString('uz-UZ')}</td>
+                    <td style="text-align:right;">${totalItemPrice.toLocaleString('uz-UZ')}</td>
+                </tr>
+            `;
+        });
+    }
+    const totalAmount = parseFloat(orderData.total_price || 0);
+    const serviceFeePercent = parseFloat(orderData.actual_service_fee_percent || orderData.service_fee_percent || 0);
+    const serviceFeeAmount = (totalAmount * serviceFeePercent) / 100;
+    const finalPrice = parseFloat(orderData.final_price || 0);
+    let paymentInfoHtml = '';
+    if (orderData.payment) {
+        paymentInfoHtml += `<p><strong>To'lov usuli:</strong> ${orderData.payment.method_display || orderData.payment.method}</p>`;
+        if (orderData.payment.method === 'cash' && orderData.payment.received_amount) {
+            paymentInfoHtml += `<p><strong>Olingan summa:</strong> ${parseFloat(orderData.payment.received_amount).toLocaleString('uz-UZ')} so'm</p>`;
+            paymentInfoHtml += `<p><strong>Qaytim:</strong> ${parseFloat(orderData.payment.change_amount || 0).toLocaleString('uz-UZ')} so'm</p>`;
+        }
+        if (orderData.payment.method === 'mobile' && orderData.payment.mobile_provider) {
+            paymentInfoHtml += `<p><strong>Mobil provayder:</strong> ${orderData.payment.mobile_provider}</p>`;
+        }
+    }
+    const receiptContent = `
+        <html>
+        <head>
+            <title>Chek #${orderData.id}</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 5mm; font-size: 10pt; color: #000; }
+                .receipt { width: 72mm; max-width: 100%; margin: 0 auto; }
+                .center { text-align: center; }
+                h1 { font-size: 14pt; margin: 5px 0; font-weight: bold; }
+                h2 { font-size: 12pt; margin: 10px 0 5px 0; font-weight: bold; }
+                p { margin: 2px 0; font-size: 9pt; line-height: 1.3; }
+                table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 8px; }
+                th, td { padding: 3px 0px; font-size: 9pt; border-bottom: 1px dashed #ccc; vertical-align: top;}
+                th { text-align: left; border-bottom: 1px solid #000; font-weight: bold; }
+                .items-table td:nth-child(1) { width: 45%; }
+                .items-table td:nth-child(2) { width: 15%; text-align:center; }
+                .items-table td:nth-child(3) { width: 20%; text-align:right; }
+                .items-table td:nth-child(4) { width: 20%; text-align:right; }
+                .totals p { display: flex; justify-content: space-between; margin: 4px 0; font-size: 10pt; }
+                .totals p span:last-child { font-weight: bold; }
+                .totals .grand-total span { font-size: 11pt; font-weight: bold; }
+                hr.dashed { border: none; border-top: 1px dashed #555; margin: 8px 0; }
+                .footer-message { margin-top: 10px; }
+                @media print {
+                    body { padding: 0; margin: 0; font-size: 9pt; }
+                    .receipt { width: 100%; margin: 0; box-shadow: none; }
+                    @page { margin: 5mm; } 
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt">
+                <div class="center">
+                    <h1>${companyDetails.name}</h1>
+                    ${companyDetails.address ? `<p>${companyDetails.address}</p>` : ''}
+                    ${companyDetails.phone ? `<p>Tel: ${companyDetails.phone}</p>` : ''}
+                  
+                </div>
+                <hr class="dashed">
+                <h2 class="center">CHEK #${orderData.id}</h2>
+                <p><strong>Sana:</strong> ${formatDateTime(orderData.created_at, 'datetime')}</p>
+                <p><strong>Buyurtma turi:</strong> ${orderData.order_type_display || orderData.order_type}</p>
+                ${orderData.created_by ? `<p><strong>Ofitsiant:</strong> ${(`${orderData.created_by.first_name || ''} ${orderData.created_by.last_name || ''}`).trim()}</p>` : ''}
+                ${(orderData.table?.name || orderData.table_name) ? `<p><strong>Stol:</strong> ${orderData.table?.name || orderData.table_name}</p>` : ''}
+                ${orderData.customer_name ? `<p><strong>Mijoz:</strong> ${orderData.customer_name}</p>` : ''}
+                ${orderData.customer_phone ? `<p><strong>Mijoz tel:</strong> ${orderData.customer_phone}</p>` : ''}
+
+                ${itemsHtml.length > 0 ? `
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th>Mahsulot</th>
+                                <th style="text-align:center;">Miq.</th>
+                                <th style="text-align:right;">Narx</th>
+                                <th style="text-align:right;">Jami</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${itemsHtml}
+                        </tbody>
+                    </table>
+                ` : '<p class="center">Mahsulotlar yo\'q.</p>'}
+                <hr class="dashed">
+                <div class="totals">
+                    <p><span>Jami (ovqatlar):</span> <span>${totalAmount.toLocaleString('uz-UZ')} so'm</span></p>
+                    ${serviceFeePercent > 0 ? `<p><span>Xizmat haqi (${serviceFeePercent.toFixed(1)}%):</span> <span>${serviceFeeAmount.toLocaleString('uz-UZ')} so'm</span></p>` : ''}
+                    <p class="grand-total"><span>YAKUNIY NARX:</span> <span>${finalPrice.toLocaleString('uz-UZ')} so'm</span></p>
+                </div>
+                ${paymentInfoHtml ? `<hr class="dashed">${paymentInfoHtml}` : ''}
+                <hr class="dashed">
+                <div class="center footer-message">
+                    <p>${companyDetails.thankYouMessage}</p>
+                    <p>${companyDetails.additionalInfo}</p>
+                </div>
+            </div>
+            <script>
+                setTimeout(function() {
+                    window.print();
+                }, 250);
+            </script>
+        </body>
+        </html>
+    `;
+    const printWindow = window.open('', '_blank', 'width=320,height=600,scrollbars=yes,resizable=yes');
+    if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(receiptContent);
+        printWindow.document.close();
+        printWindow.focus(); 
+    } else {
+        toast.error("Mijoz cheki oynasini ochib bo'lmadi. Brauzeringizda pop-up'lar bloklangan bo'lishi mumkin.");
+    }
+  };
+
+  // =========================================================================================
+  // === OSHXONA CHEKINI WINDOW.PRINT() ORQALI CHOP ETISH FUNKSIYASI ===
+  // =========================================================================================
+  const printKitchenReceiptViaWindowPrint = (orderData: any, receiptType: 'initial' | 'delta_added' | 'delta_cancelled' = 'initial', deltaItems: any[] | null = null) => {
+    if (!orderData || !orderData.id) {
+        toast.error("Oshxona cheki uchun buyurtma ma'lumotlari topilmadi.");
+        return;
+    }
+
+    const itemsToPrint = deltaItems || orderData.items; // Agar deltaItems berilsa, o'shalarni chop etamiz
+
+    if (!Array.isArray(itemsToPrint) || itemsToPrint.length === 0) {
+        if (receiptType === 'initial') { // Faqat boshlang'ich buyurtmada bo'sh bo'lsa, xabar beramiz
+             // Bu holatda ham "YANGI BUYURTMA" degan chek chiqarish mumkin
+        } else {
+            toast.warn(`Oshxona cheki (${receiptType}) uchun mahsulotlar yo'q.`);
+            return; // O'zgarish bo'lmasa, delta cheklarni chiqarmaymiz
+        }
+    }
+
+    let itemsHtml = "";
+    if (Array.isArray(itemsToPrint) && itemsToPrint.length > 0) {
+        itemsToPrint.forEach((item: any) => {
+            const productName = item.product_details?.name || item.productName || 'Noma\'lum'; // productName delta uchun
+            const quantity = item.quantity;
+            let reasonText = "";
+            if (receiptType === 'delta_cancelled') {
+                reasonText = ` <span style="color:red; font-style:italic;">(${item.reason || "O'chirildi"})</span>`;
+            } else if (receiptType === 'delta_added') {
+                reasonText = ` <span style="color:green; font-style:italic;">(${item.reason || "Qo'shildi"})</span>`;
+            }
+
+            itemsHtml += `
+                <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed #ccc;">
+                    <span style="font-size: 11pt; font-weight: bold; flex-grow: 1; word-break: break-word;">${productName}${reasonText}</span>
+                    <span style="font-size: 12pt; font-weight: bold; min-width: 30px; text-align: right;">x ${quantity}</span>
+                </div>
+            `;
+        });
+    } else if (receiptType === 'initial') { // Agar initial va items bo'sh bo'lsa
+         itemsHtml = `<div style="padding: 4px 0; border-bottom: 1px dashed #ccc; text-align: center; font-weight: bold;">YANGI BUYURTMA (BO'SH)</div>`;
     }
 
 
-    try {
-        const token = getToken();
-        if (!token) {
-            toast.error("Avtorizatsiya tokeni topilmadi.");
-            setIsFetchingKitchenReceipt(false);
-            return;
-        }
-        const response = await axios.post(`${API_BASE_URL}/print/kitchen/`, payload, {
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-        });
-        if (response.data && response.data.success) {
-            toast.success(response.data.message || `Oshxona cheki (${receiptType}) chop etishga yuborildi.`);
-        } else {
-            toast.error(response.data.message || "Oshxona chekini chop etishda noma'lum xatolik (API).");
-        }
-    } catch (error: any) {
-        handleApiError(error, `Oshxona chekini (${receiptType}) chop etish`);
-    } finally {
-        setIsFetchingKitchenReceipt(false);
+    let title = `BUYURTMA #${orderData.id}`;
+    if (receiptType === 'delta_added') title = `QO'SHIMCHA #${orderData.id}`;
+    else if (receiptType === 'delta_cancelled') title = `BEKOR QILINDI #${orderData.id}`;
+    
+    const kitchenReceiptContent = `
+        <html>
+        <head>
+            <title>Oshxona Cheki #${orderData.id} (${receiptType})</title>
+            <style>
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 5mm; font-size: 10pt; color: #000; }
+                .receipt { width: 72mm; max-width: 100%; margin: 0 auto; }
+                .center { text-align: center; }
+                h2 { font-size: 14pt; margin: 10px 0 5px 0; font-weight: bold; }
+                p { margin: 3px 0; font-size: 10pt; line-height: 1.3; }
+                hr.dashed { border: none; border-top: 1px solid #000; margin: 8px 0; }
+                 @media print {
+                    body { padding: 0; margin: 0; font-size: 10pt; }
+                    .receipt { width: 100%; margin: 0; box-shadow: none; }
+                    @page { margin: 3mm; } 
+                }
+            </style>
+        </head>
+        <body>
+            <div class="receipt">
+                <h2 class="center">${title}</h2>
+                <hr class="dashed">
+                <p><strong>Vaqt:</strong> ${formatDateTime(new Date(), 'time')} (${formatDateTime(orderData.created_at, 'time')})</p>
+                ${(orderData.table?.name || orderData.table_name) ? `<p><strong>Stol:</strong> ${orderData.table?.name || orderData.table_name}</p>` : ''}
+                <p><strong>Turi:</strong> ${orderData.order_type_display || orderData.order_type}</p>
+                ${orderData.created_by ? `<p><strong>Ofitsiant:</strong> ${(`${orderData.created_by.first_name || ''} ${orderData.created_by.last_name || ''}`).trim()}</p>` : ''}
+                ${orderData.comment ? `<hr class="dashed"><p><strong>Izoh:</strong> ${orderData.comment}</p>` : ''}
+                <hr class="dashed">
+                <div>
+                    ${itemsHtml}
+                </div>
+                <hr class="dashed">
+            </div>
+            <script>
+                setTimeout(function() {
+                    window.print();
+                }, 250);
+            </script>
+        </body>
+        </html>
+    `;
+
+    const printWindow = window.open('', `_blank_kitchen_${orderData.id}_${receiptType}`, 'width=320,height=400,scrollbars=yes,resizable=yes');
+    if (printWindow) {
+        printWindow.document.open();
+        printWindow.document.write(kitchenReceiptContent);
+        printWindow.document.close();
+        printWindow.focus(); 
+    } else {
+        toast.error("Oshxona cheki oynasini ochib bo'lmadi. Brauzeringizda pop-up'lar bloklangan bo'lishi mumkin.");
     }
   };
   
-  const handlePrintReceiptViaApi = async (orderDataForReceipt: any) => {
-    if (!orderDataForReceipt || !orderDataForReceipt.id) {
-        toast.error("Mijoz cheki uchun buyurtma IDsi topilmadi.");
-        return;
-    }
-     if (!Array.isArray(orderDataForReceipt.items) || orderDataForReceipt.items.length === 0) {
-        toast.warn("Mijoz cheki uchun mahsulotlar yo'q.");
-        // Agar bo'sh bo'lsa ham yuborish kerak bo'lsa, itemsni moslashtiring
-    }
-    if (isFetchingReceipt) return;
-    setIsFetchingReceipt(true);
-    setSubmitEditError(null);
-
-    // Promtga mos payload
-    const payload = {
-        orderId: orderDataForReceipt.id,
-        orderDate: formatDateTime(orderDataForReceipt.created_at, 'date'), // "DD/MM/YYYY"
-        orderTime: formatDateTime(orderDataForReceipt.created_at, 'time'), // "HH:MM"
-        orderTypeDisplay: orderDataForReceipt.order_type_display || orderDataForReceipt.order_type,
-        waiterName: orderDataForReceipt.created_by ? `${orderDataForReceipt.created_by.first_name || ''} ${orderDataForReceipt.created_by.last_name || ''}`.trim() : null,
-        customerDetails: {
-            tableName: orderDataForReceipt.order_type === 'dine_in' ? (orderDataForReceipt.table?.name || orderDataForReceipt.table_name || null) : null,
-            customerName: orderDataForReceipt.customer_name || null,
-            // Boshqa mijoz ma'lumotlari (telefon, manzil) agar kerak bo'lsa, promtda bor edi
-        },
-        items: orderDataForReceipt.items.map((item: any) => ({
-            productName: item.product_details?.name || 'Noma\'lum',
-            quantity: item.quantity,
-            unitPrice: (parseFloat(item.unit_price || 0)).toFixed(2),
-            totalItemPrice: (parseFloat(item.unit_price || 0) * item.quantity).toFixed(2),
-        })),
-        subtotal: (parseFloat(orderDataForReceipt.total_price || 0)).toFixed(2), // total_price bu yerda xizmat/soliqsiz summa
-        serviceFeePercent: (parseFloat(orderDataForReceipt.service_fee_percent || 0)).toFixed(2),
-        serviceFeeAmount: (parseFloat(orderDataForReceipt.service_fee_amount || 0)).toFixed(2),
-        taxPercent: (parseFloat(orderDataForReceipt.tax_percent || 0)).toFixed(2), // Agar soliq bo'lsa
-        taxAmount: (parseFloat(orderDataForReceipt.tax_amount || 0)).toFixed(2),   // Agar soliq bo'lsa
-        finalPrice: (parseFloat(orderDataForReceipt.final_price || 0)).toFixed(2),
-        paymentMethodDisplay: orderDataForReceipt.payment ? (orderDataForReceipt.payment.method_display || orderDataForReceipt.payment.method) : null,
-        paymentMethod: orderDataForReceipt.payment ? orderDataForReceipt.payment.method : null,
-        receivedAmount: orderDataForReceipt.payment && orderDataForReceipt.payment.method === 'cash' ? (parseFloat(orderDataForReceipt.payment.received_amount || 0)).toFixed(2) : null,
-        changeAmount: orderDataForReceipt.payment && orderDataForReceipt.payment.method === 'cash' ? (parseFloat(orderDataForReceipt.payment.change_amount || 0)).toFixed(2) : null,
-    };
-    
-    // Faqat to'lov bo'lsa to'lov ma'lumotlarini yuborish
-    if (!orderDataForReceipt.payment) {
-        delete payload.paymentMethodDisplay;
-        delete payload.paymentMethod;
-        delete payload.receivedAmount;
-        delete payload.changeAmount;
-    }
-
-
-    try {
-        const token = getToken();
-        if (!token) {
-            toast.error("Avtorizatsiya tokeni topilmadi.");
-            setIsFetchingReceipt(false);
-            return;
-        }
-        const response = await axios.post(`${API_BASE_URL}/print/customer/`, payload, {
-            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
-        });
-        if (response.data && response.data.success) {
-            toast.success(response.data.message || "Mijoz cheki chop etishga yuborildi.");
-        } else {
-            toast.error(response.data.message || "Mijoz chekini chop etishda noma'lum xatolik (API).");
-        }
-    } catch (error: any) {
-        handleApiError(error, "Mijoz chekini chop etish");
-    } finally {
-        setIsFetchingReceipt(false);
-    }
-  };
-  
-  // =========================================================================================
-  // === QOLGAN FUNKSIYALAR (O'zgarishsiz yoki kichik o'zgarishlar bilan) ===
-  // =========================================================================================
-
   const finishEditingInternal = (informUser: boolean = false) => {
+    // ... (o'zgarishsiz)
     const previousId = editingOrderId;
     setEditingOrderId(null);
     setOrderToEdit(null);
@@ -349,22 +425,22 @@ function POSPage() {
     setSubmitEditError(null);
     setCart([]); 
     setSelectedTableId(null);
-    setOrderType('dine_in'); // Standart holatga qaytarish
+    setOrderType('dine_in');
     setCustomerInfo({ name: "", phone: "+998 ", address: "" });
     if (informUser && previousId) {
-      // toast.info(`Buyurtma #${previousId} bilan ishlash yakunlandi/bekor qilindi.`); // Konsolga chiqarish o'rniga
       console.log(`Buyurtma #${previousId} bilan ishlash yakunlandi/bekor qilindi.`);
     }
   };
 
   const loadOrderForEditing = async (orderIdToLoad: number, associatedTable: any = null) => {
-    const token = getToken();
+    // ... (o'zgarishsiz)
+     const token = getToken();
     if (!token || !orderIdToLoad) { 
         toast.error("Tahrirlash uchun ID yoki token yetarli emas.");
         return; 
     }
-    const isAnyMutationPending = createOrderMutation.isPending || updateOrderItemsMutation.isPending || checkoutMutation.isPending || reorderMutation.isPending;
-    if (isAnyMutationPending) { 
+    const isAnyMutationActive = createOrderMutation.isPending || updateOrderItemsMutation.isPending || checkoutMutation.isPending || reorderMutation.isPending;
+    if (isAnyMutationActive) { 
         toast.warn("Iltimos, avvalgi amal tugashini kuting.");
         return; 
     }
@@ -372,10 +448,10 @@ function POSPage() {
 
     setIsEditLoadingManual(true);
     setEditErrorManual(null);
-    setSubmitEditError(null); // Oldingi xatolikni tozalash
+    setSubmitEditError(null);
     
     try {
-      const data = await queryClient.fetchQuery<any>({ // any o'rniga Order interfeysini ishlating
+      const data = await queryClient.fetchQuery<any>({
         queryKey: ['orderDetails', orderIdToLoad],
         queryFn: async () => {
           const url = `${API_BASE_URL}/orders/${orderIdToLoad}/`;
@@ -389,21 +465,20 @@ function POSPage() {
       if (data.status === 'paid' || data.status === 'completed' || data.status === 'cancelled') {
         toast.warn(`Buyurtma #${orderIdToLoad} (${data.status_display}) holatida tahrirlab bo'lmaydi.`);
         setIsEditLoadingManual(false);
-        setShowHistoryDialog(true); // Tarix oynasini ochish
+        setShowHistoryDialog(true);
         return;
       }
       
       setOrderToEdit(data);
-      setOriginalOrderItems(JSON.parse(JSON.stringify(data.items || []))); // Chuqur nusxalash
+      setOriginalOrderItems(JSON.parse(JSON.stringify(data.items || [])));
       setEditingOrderId(orderIdToLoad);
       setOrderType(data.order_type || "dine_in");
-      // Mijoz ma'lumotlarini ham o'rnatish
       setCustomerInfo({ 
         name: data.customer_name || "", 
         phone: data.customer_phone || "+998 ", 
         address: data.customer_address || "" 
       });
-      setCart([]); // Yangi savatni tozalash
+      setCart([]);
 
       if (data.order_type === 'dine_in' && data.table && data.table.id) {
         setSelectedTableId(data.table.id);
@@ -414,13 +489,13 @@ function POSPage() {
       }
 
       toast.info(`Buyurtma #${orderIdToLoad} tahrirlash uchun yuklandi.`);
-      setShowHistoryDialog(false); // Tarix oynasini yopish
-      setShowTableDialog(false);   // Stol tanlash oynasini yopish
+      setShowHistoryDialog(false);
+      setShowTableDialog(false);
 
     } catch (err: any) {
       handleApiError(err, `Buyurtma #${orderIdToLoad} ni yuklash`);
-      setEditErrorManual(`Buyurtma #${orderIdToLoad} ni yuklashda xato.`); // Foydalanuvchiga ko'rsatish
-      finishEditingInternal(); // Xatolik bo'lsa, tahrirlash rejimini tozalash
+      setEditErrorManual(`Buyurtma #${orderIdToLoad} ni yuklashda xato.`);
+      finishEditingInternal();
     } finally {
       setIsEditLoadingManual(false);
     }
@@ -437,11 +512,9 @@ function POSPage() {
     },
     onSuccess: (data) => {
       toast.success(`Buyurtma #${data.id} muvaffaqiyatli yaratildi!`);
-      if (data && Array.isArray(data.items) && data.items.length > 0) {
-        handlePrintReceiptViaApi(data); 
-        handlePrintKitchenReceiptViaApi(data, 'initial'); // Yoki 'full'
-      } else if (data && data.id) { // Agar items bo'sh bo'lsa ham
-        handlePrintKitchenReceiptViaApi(data, 'initial'); 
+      // OSHXONA CHEKINI WINDOW.PRINT ORQALI CHOP ETISH
+      if (data && data.id) {
+        printKitchenReceiptViaWindowPrint(data, 'initial'); 
       }
       finishEditingInternal(); 
       setShowCustomerDialog(false);
@@ -450,6 +523,7 @@ function POSPage() {
       if (showHistoryDialog) { queryClient.invalidateQueries({ queryKey: ['orderHistory'] }); }
     },
     onError: (error: any, variables: any) => {
+      // ... (o'zgarishsiz)
       let msg = "Buyurtma yaratishda noma'lum xato!";
       if (error.response?.data) {
         const errorData = error.response.data;
@@ -463,7 +537,7 @@ function POSPage() {
           msg = Object.entries(errorData).map(([k, v]: [string, any]) => `${k}: ${Array.isArray(v) ? v.join(',') : v}`).join('; ');
         }
       } else if (error.message) { msg = error.message; }
-      setSubmitEditError(`Xatolik: ${msg}`); // O'ng panelda ko'rsatish
+      setSubmitEditError(`Xatolik: ${msg}`);
       toast.error(`Buyurtma yaratishda xato: ${msg}`);
     }
   });
@@ -480,13 +554,13 @@ function POSPage() {
     onSuccess: (data, variables) => {
       toast.success(`Buyurtma #${variables.orderId} muvaffaqiyatli yangilandi!`);
       
-      const updatedOrderFromServer = data; // API dan qaytgan to'liq buyurtma obyekti
+      const updatedOrderFromServer = data;
       const newItemsFromResponse = updatedOrderFromServer.items || [];
       const addedOrIncreasedItems: any[] = [];
       const removedOrDecreasedItems: any[] = [];
 
       newItemsFromResponse.forEach((newItem: any) => {
-        const oldItem = originalOrderItems.find(oi => oi.product === newItem.product); // originalOrderItems to'g'ri bo'lishi kerak
+        const oldItem = originalOrderItems.find(oi => (oi.product_id || oi.product) === (newItem.product_id || newItem.product));
         if (!oldItem) { 
           addedOrIncreasedItems.push({ ...newItem, productName: newItem.product_details?.name, quantity: newItem.quantity, reason: "Yangi" });
         } else if (newItem.quantity > oldItem.quantity) { 
@@ -495,7 +569,7 @@ function POSPage() {
       });
 
       originalOrderItems.forEach((oldItem: any) => {
-        const newItem = newItemsFromResponse.find(ni => ni.product === oldItem.product);
+        const newItem = newItemsFromResponse.find(ni => (ni.product_id || ni.product) === (oldItem.product_id || oldItem.product));
         if (!newItem) { 
             removedOrDecreasedItems.push({ ...oldItem, productName: oldItem.product_details?.name, quantity: oldItem.quantity, reason: "Bekor qilindi" });
         } else if (newItem.quantity < oldItem.quantity) { 
@@ -503,17 +577,14 @@ function POSPage() {
         }
       });
       
-      // Backenddan kelgan `updatedOrderFromServer` obyektini ishlatamiz, chunki unda `created_by` va boshqa kerakli maydonlar bo'lishi mumkin.
+      // OSHXONA DELTA CHEKLARINI WINDOW.PRINT ORQALI CHOP ETISH
       if (addedOrIncreasedItems.length > 0) {
-        const deltaAddedData = { ...updatedOrderFromServer, items: addedOrIncreasedItems };
-        handlePrintKitchenReceiptViaApi(deltaAddedData, 'delta_added');
+        printKitchenReceiptViaWindowPrint(updatedOrderFromServer, 'delta_added', addedOrIncreasedItems);
       }
       if (removedOrDecreasedItems.length > 0) {
-        const deltaCancelledData = { ...updatedOrderFromServer, items: removedOrDecreasedItems };
-        handlePrintKitchenReceiptViaApi(deltaCancelledData, 'delta_cancelled');
+        printKitchenReceiptViaWindowPrint(updatedOrderFromServer, 'delta_cancelled', removedOrDecreasedItems);
       }
 
-      // orderToEdit ni serverdan kelgan to'liq ma'lumot bilan yangilash
       setOrderToEdit(updatedOrderFromServer); 
       setOriginalOrderItems(JSON.parse(JSON.stringify(newItemsFromResponse))); 
 
@@ -522,6 +593,7 @@ function POSPage() {
       if (showHistoryDialog) { refetchHistory(); }
     },
     onError: (error: any) => {
+        // ... (o'zgarishsiz)
         let errorMsg = "O'zgarishlarni saqlashda xato yuz berdi.";
         if (error.response?.data) {
             const errorData = error.response.data;
@@ -542,23 +614,28 @@ function POSPage() {
       if (!token) throw new Error("Avtorizatsiya tokeni topilmadi!");
       const url = `${API_BASE_URL}/tables/${tableId}/checkout/`;
       const res = await axios.post(url, paymentData, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
-      return res.data; // Bu yerda to'langan buyurtma obyekti qaytadi
+      return res.data;
     },
-    onSuccess: (data, variables) => { // `data` bu yerda to'langan buyurtma
+    onSuccess: (data, variables) => {
       toast.success(`Stol #${variables.tableId} uchun to'lov amalga oshirildi! Buyurtma #${data.id} yopildi.`);
-      if (data && Array.isArray(data.items) && data.items.length > 0) { 
-        handlePrintReceiptViaApi(data); // Mijoz cheki to'langan buyurtma ma'lumotlari bilan
-      } 
+      
+      if (data && data.id) {
+        printReceiptViaWindowPrint(data); // Mijoz cheki
+        // To'lovdan keyin oshxona chekini chiqarish shart emas, lekin agar kerak bo'lsa:
+        // printKitchenReceiptViaWindowPrint(data, 'initial'); 
+      }
+      
       setShowCheckoutDialog(false);
       setTableForCheckout(null);
       setPaymentDetails({ method: "cash", received_amount: "", mobile_provider: "Click" });
       queryClient.invalidateQueries({ queryKey: ['tables'] });
       queryClient.invalidateQueries({ queryKey: ['orderHistory'] });
-      if (editingOrderId === data.id) { // Agar shu buyurtma tahrirlanayotgan bo'lsa
+      if (editingOrderId === data.id) {
         finishEditingInternal(); 
       }
     },
     onError: (error: any, variables) => {
+        // ... (o'zgarishsiz)
         let msg = "To'lovni amalga oshirishda xato.";
         if (error.response?.data) {
             const errorData = error.response.data;
@@ -566,7 +643,7 @@ function POSPage() {
             else if (errorData.detail) msg = errorData.detail;
             else if (typeof errorData === 'object') msg = Object.entries(errorData).map(([k,v]:[string,any])=>`${k}: ${Array.isArray(v)?v.join(','):v}`).join('; ')
         } else if (error.message) { msg = error.message; }
-        setSubmitEditError(`Xatolik: ${msg}`); // Checkout dialogida ko'rsatish
+        setSubmitEditError(`Xatolik: ${msg}`);
         toast.error(`To'lovda xato (Stol #${variables.tableId}): ${msg}`);
         if (error.response?.status === 404 || error.response?.data?.detail?.includes("active order")) {
             queryClient.invalidateQueries({ queryKey: ['tables'] });
@@ -582,17 +659,16 @@ function POSPage() {
       if (dataToSend.customer_phone) {
           dataToSend.customer_phone = dataToSend.customer_phone.replace(/\D/g, '');
       }
-      // Muhim: `originalOrderId` va `originalOrderData` ni backendga yubormaymiz
       const { originalOrderId, originalOrderData, ...actualOrderData } = dataToSend;
       const res = await axios.post(`${API_BASE_URL}/orders/`, actualOrderData, { headers: { Authorization: `Bearer ${token}` } });
-      return { newData: res.data, originalOrderId: originalOrderId }; // originalOrderId ni qaytarish
+      return { newData: res.data, originalOrderId: originalOrderId };
     },
-    onSuccess: (response, variables: any) => { // `response` endi `{newData, originalOrderId}`
+    onSuccess: (response, variables: any) => {
       const { newData, originalOrderId } = response;
       toast.success(`Buyurtma #${originalOrderId} dan nusxa (#${newData.id}) yaratildi!`);
-      if (newData && Array.isArray(newData.items) && newData.items.length > 0) { 
-        handlePrintReceiptViaApi(newData); 
-        handlePrintKitchenReceiptViaApi(newData, 'initial'); 
+      // QAYTA BUYURTMA UCHUN OSHXONA CHEKI
+      if (newData && newData.id) { 
+        printKitchenReceiptViaWindowPrint(newData, 'initial'); 
       }
       finishEditingInternal(); 
       setShowHistoryDialog(false);
@@ -600,6 +676,7 @@ function POSPage() {
       queryClient.invalidateQueries({ queryKey: ['orderHistory'] });
     },
     onError: (error: any, variables: any) => {
+        // ... (o'zgarishsiz)
         let msg = "Qayta buyurtma berishda noma'lum xato!";
         if (error.response?.data) {
             const errorData = error.response.data;
@@ -607,19 +684,19 @@ function POSPage() {
             else if(errorData.detail) msg=errorData.detail;
             else if (errorData.table_id && Array.isArray(errorData.table_id) && errorData.table_id[0]?.includes('is already occupied')) {
                  queryClient.invalidateQueries({ queryKey: ['tables'] });
-                 const originalOrder = variables.originalOrderData; // Bu yerda variables ichidan originalOrderData ni olishimiz kerak
+                 const originalOrder = variables.originalOrderData;
                  const tableNameFromState = tables.find((t:any)=>t.id===originalOrder?.table?.id)?.name;
                  const tableName = tableNameFromState || originalOrder?.table_name || originalOrder?.table?.id || "Stol";
                  msg = `Stol ${tableName} hozirda band. Boshqa stol tanlang.`;
              }
             else if(typeof errorData === 'object') msg=Object.entries(errorData).map(([k,v]:[string,any])=>`${k}:${Array.isArray(v)?v.join(','):v}`).join('; ');
         } else if (error.message) { msg = error.message; }
-        setSubmitEditError(`Xatolik: ${msg}`); // O'ng panelda ko'rsatish
+        setSubmitEditError(`Xatolik: ${msg}`);
         toast.error(`Qayta buyurtma berishda xato: ${msg}`);
     }
   });
 
-  // --- Memoized qiymatlar (o'zgarishsiz) ---
+  // filteredProducts, uniqueZones, currentPanelItems, currentPanelTotal - o'zgarishsiz
   const filteredProducts = useMemo(() => {
     if (!Array.isArray(products)) return [];
     return products.filter((p: any) =>
@@ -650,9 +727,6 @@ function POSPage() {
   }, [editingOrderId, orderToEdit, cart]);
 
   const currentPanelTotal = useMemo(() => {
-    // Bu funksiya endi faqat mahsulotlar summasini hisoblaydi.
-    // Xizmat haqi va yakuniy narx `orderToEdit.final_price` dan olinadi
-    // yoki yangi buyurtma uchun backend hisoblaydi.
     let itemsTotal = 0;
     if (editingOrderId && orderToEdit?.items) {
       itemsTotal = orderToEdit.items.reduce((sum: number, item: any) => sum + (Number(item.unit_price || 0) * item.quantity), 0);
@@ -662,11 +736,10 @@ function POSPage() {
     return itemsTotal;
   }, [editingOrderId, orderToEdit, cart]);
 
-
   const isMutationLoading = createOrderMutation.isPending || updateOrderItemsMutation.isPending || checkoutMutation.isPending || reorderMutation.isPending;
   const isAnyLoading = isMutationLoading || isLoadingProducts || isLoadingCategories || isEditLoadingManual || isLoadingTables;
 
-  // --- Savat va buyurtma bilan ishlash funksiyalari (o'zgarishsiz yoki kichik o'zgarishlar bilan) ---
+  // Savat va buyurtma bilan ishlash funksiyalari - o'zgarishsiz
   const addToCart = (product: any) => {
     if (editingOrderId) { 
       handleLocalAddItemFromProductList(product);
@@ -677,20 +750,17 @@ function POSPage() {
          return; 
     }
     setCart((prev) => {
-      const exist = prev.find((i) => i.id === product.id); // Yangi savatda `product.id` ni `item.id` sifatida saqlaymiz
+      const exist = prev.find((i) => i.id === product.id);
       if (exist) return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      // Yangi element qo'shganda `product` obyektini saqlaymiz
       return [...prev, { id: product.id, product: product, quantity: 1 }];
     });
   };
 
-  const decreaseQuantity = (item: any) => { // `item` bu yerda savatdagi yoki `orderToEdit.items` dagi element
+  const decreaseQuantity = (item: any) => {
     if (editingOrderId && orderToEdit) {
-      // `item.product` bu yerda product ID si bo'lishi kerak
-      handleLocalEditQuantityChange(item.product_id || item.product, -1); // item.product_id yoki item.product (qaysi biri mavjud bo'lsa)
+      handleLocalEditQuantityChange(item.product_id || item.product, -1);
       return;
     }
-    // Yangi buyurtma uchun (cart)
     setCart((prev) => {
       const current = prev.find((i) => i.id === item.id); 
       if (!current) return prev;
@@ -712,15 +782,13 @@ function POSPage() {
     setOrderToEdit((prevOrder: any) => {
       if (!prevOrder) return null;
       const updatedItems = prevOrder.items ? [...prevOrder.items] : [];
-      const itemIndex = updatedItems.findIndex(item => (item.product_id || item.product) === productId); // product_id yoki product
+      const itemIndex = updatedItems.findIndex(item => (item.product_id || item.product) === productId);
       if (itemIndex > -1) {
         const currentItem = updatedItems[itemIndex];
         const newQuantity = currentItem.quantity + change;
         if (newQuantity <= 0) { updatedItems.splice(itemIndex, 1); }
         else { updatedItems[itemIndex] = { ...currentItem, quantity: newQuantity }; }
       }
-      // Narxlarni qayta hisoblash kerak bo'lsa, backend buni qiladi.
-      // Frontendda faqat miqdorni o'zgartiramiz.
       return { ...prevOrder, items: updatedItems };
     });
   };
@@ -735,12 +803,11 @@ function POSPage() {
         updatedItems[itemIndex] = { ...updatedItems[itemIndex], quantity: updatedItems[itemIndex].quantity + 1 };
       } else {
         updatedItems.push({
-          product: product.id, // product ID si
-          product_id: product.id, // Yoki shunday
+          product: product.id,
+          product_id: product.id,
           product_details: { id: product.id, name: product.name, image_url: product.image },
           quantity: 1,
           unit_price: product.price,
-          // total_price backendda hisoblanishi mumkin yoki frontendda (unit_price * quantity)
         });
       }
       return { ...prevOrder, items: updatedItems };
@@ -748,7 +815,8 @@ function POSPage() {
   };
   
   const submitOrder = () => {
-    if (editingOrderId) return; // Tahrirlash rejimida bu funksiya ishlamaydi
+    // ... (o'zgarishsiz)
+    if (editingOrderId) return;
     if (cart.length === 0) { 
         toast.warn("Savat bo‘sh!");
         setSubmitEditError("Savat bo‘sh!");
@@ -780,13 +848,13 @@ function POSPage() {
       customer_name: (orderType === "takeaway" || orderType === "delivery") ? customerInfo.name : null,
       customer_phone: (orderType === "takeaway" || orderType === "delivery") ? customerInfo.phone : null,
       customer_address: orderType === "delivery" ? customerInfo.address : null,
-      items: cart.map((item) => ({ product_id: item.id, quantity: item.quantity })), // item.id bu product.id
-      // comment: "Mening izohim" // Agar izoh qo'shmoqchi bo'lsangiz
+      items: cart.map((item) => ({ product_id: item.id, quantity: item.quantity })),
     };
     createOrderMutation.mutate(orderData);
   };
 
   const submitEditedOrderChanges = () => {
+    // ... (o'zgarishsiz)
     if (!editingOrderId || !orderToEdit || !originalOrderItems || updateOrderItemsMutation.isPending || isEditLoadingManual) {
       toast.warn("O'zgarishlarni saqlash uchun shartlar bajarilmadi.");
       setSubmitEditError("O'zgarishlarni saqlash uchun shartlar bajarilmadi.");
@@ -806,13 +874,9 @@ function POSPage() {
       if (!originalItem) { 
         operations.push({ operation: "add", product_id: (currentItem.product_id || currentItem.product), quantity: currentItem.quantity });
       } else if (currentItem.quantity !== originalItem.quantity) {
-        // `originalItem.id` bu yerda order_item_id bo'lishi kerak. Agar yo'q bo'lsa, backend buni product_id orqali topishi kerak.
-        // Promtda update-items uchun payload formati yo'q edi, shuning uchun taxminiy qilyapman.
-        // Backend bilan kelishilgan payloadga moslang!
-        if (originalItem.id && typeof originalItem.id === 'number') { // Bu order_item_id
+        if (originalItem.id && typeof originalItem.id === 'number') {
             operations.push({ operation: "set", order_item_id: originalItem.id, quantity: currentItem.quantity });
         } else {
-            // Agar order_item_id yo'q bo'lsa, backend product_id orqali topib o'zgartirishi kerak
             console.warn("Set operatsiyasi uchun order_item_id topilmadi, product_id ishlatiladi:", originalItem);
             operations.push({ operation: "set_by_product", product_id: (originalItem.product_id || originalItem.product), quantity: currentItem.quantity });
         }
@@ -833,12 +897,11 @@ function POSPage() {
         toast.info("Hech qanday o'zgarish qilinmadi.");
         return; 
     }
-    // Backendga order_comment ni ham yuborish kerak bo'lishi mumkin
-    // const payload = { items_operations: operations, comment: orderToEdit.comment || null };
     updateOrderItemsMutation.mutate({ orderId: editingOrderId, payload: { items_operations: operations } });
   };
   
-  const reorderToSameTable = (order: any) => { // Bu order, orderHistory dan keladi
+  const reorderToSameTable = (order: any) => {
+    // ... (o'zgarishsiz)
     if (isAnyLoading) { 
         toast.warn("Boshqa amal bajarilmoqda, iltimos kuting.");
          return; 
@@ -859,12 +922,12 @@ function POSPage() {
       customer_phone: (order.order_type === "takeaway" || order.order_type === "delivery") ? order.customer_phone : null,
       customer_address: order.order_type === "delivery" ? order.customer_address : null,
       items: order.items.map((item: any) => ({ product_id: (item.product_id || item.product), quantity: item.quantity })),
-      // originalOrderId va originalOrderData ni mutationFn ga yubormaymiz, onSuccess da ishlatamiz
     };
     reorderMutation.mutate({ ...orderData, originalOrderId: order.id, originalOrderData: order });
   };
 
   const handleCustomerInfoSave = () => {
+    // ... (o'zgarishsiz)
     const phoneDigits = customerInfo.phone.replace(/\D/g, '');
     if (!customerInfo.name || phoneDigits.length < 12 ) { 
         toast.error("Ism va telefon raqamini to'liq kiriting (kamida 12 raqam).");
@@ -877,14 +940,16 @@ function POSPage() {
          return; 
     }
     setShowCustomerDialog(false); 
+    setSubmitEditError(null);
     toast.success("Mijoz ma'lumotlari saqlandi.");
   };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const prefix = "+998"; // Bo'sh joysiz
+    // ... (o'zgarishsiz)
+    const prefix = "+998";
     let value = e.target.value;
     if (!value.startsWith(prefix)) {
-        value = prefix + value.replace(/\D/g, '').substring(prefix.length-3); // +998 dan keyingi raqamlarni saqlash
+        value = prefix + value.replace(/\D/g, '').substring(prefix.length-3);
     }
     const numbers = value.substring(prefix.length).replace(/\D/g, '');
     let formattedNumber = prefix;
@@ -893,10 +958,11 @@ function POSPage() {
     if (numbers.length > 5) formattedNumber += " " + numbers.substring(5, 7);
     if (numbers.length > 7) formattedNumber += " " + numbers.substring(7, 9);
     
-    setCustomerInfo(prev => ({ ...prev, phone: formattedNumber.slice(0, 17) })); // Umumiy uzunlik +998 XX XXX XX XX
+    setCustomerInfo(prev => ({ ...prev, phone: formattedNumber.slice(0, 17) }));
   };
   
   const cancelEditing = () => {
+    // ... (o'zgarishsiz)
     if (updateOrderItemsMutation.isPending) { 
         toast.warn("Saqlash jarayoni tugashini kuting.");
         return; 
@@ -905,23 +971,20 @@ function POSPage() {
     toast.info("Tahrirlash bekor qilindi.");
   };
 
-  const handleLogout = () => { // Bu funksiya qayta nomlandi, eski `handleLogout` bilan adashmaslik uchun
-    setShowLogoutDialog(true); // Dialog ochish
+  const handleLogout = () => { // ... (o'zgarishsiz)
+    setShowLogoutDialog(true);
   };
 
-  const confirmLogoutAction = () => { // Bu logoutni amalga oshiradi
+  const confirmLogoutAction = () => { // ... (o'zgarishsiz)
     if (typeof window !== "undefined") { 
         localStorage.removeItem("token"); 
-        localStorage.removeItem("user"); // User ma'lumotlarini ham o'chirish
-        queryClient.clear(); // React Query keshini tozalash
-        window.location.href = "/auth"; // /auth ga yo'naltirish
+        localStorage.removeItem("user");
+        queryClient.clear();
+        window.location.href = "/auth";
         toast.success("Tizimdan muvaffaqiyatli chiqildi!");
     }
     setShowLogoutDialog(false);
   };
-
-  // Bu funksiya endi kerak emas, chunki `handlePrint...ViaApi` lar ishlatiladi.
-  // const fetchAndPrintCurrentOrderReceipt = ... 
 
   // === JSX ===
   return (
@@ -929,7 +992,8 @@ function POSPage() {
       <div className="flex h-screen flex-col bg-muted/40">
         
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-background px-4 sm:px-6 shrink-0">
-          <div className="flex items-center gap-2 sm:gap-4">
+           {/* ... (Header JSX o'zgarishsiz) ... */}
+           <div className="flex items-center gap-2 sm:gap-4">
             <Tooltip><TooltipTrigger asChild>
               <Button variant="outline" size="icon" className="shrink-0" onClick={handleLogout}><LogOut className="h-5 w-5" /></Button>
             </TooltipTrigger><TooltipContent><p>Chiqish</p></TooltipContent></Tooltip>
@@ -942,7 +1006,7 @@ function POSPage() {
           </div>
           <div className="flex-1 flex justify-center px-4">
             <Tabs
-              value={editingOrderId && orderToEdit ? orderToEdit.order_type : orderType} // Tahrirlashda orderToEdit dan olish
+              value={editingOrderId && orderToEdit ? orderToEdit.order_type : orderType}
               onValueChange={(value) => {
                 if (editingOrderId || isMutationLoading) {
                     toast.info("Joriy buyurtma bilan ishlash tugallanmaguncha turni o'zgartirib bo'lmaydi.");
@@ -976,6 +1040,7 @@ function POSPage() {
 
         <div className="flex-1 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-0 overflow-hidden">
           <div className="md:col-span-2 lg:col-span-3 flex flex-col border-r border-border overflow-hidden">
+            {/* ... (Mahsulotlar paneli JSX o'zgarishsiz) ... */}
             <div className="border-b border-border p-4 shrink-0">
               <div className="relative mb-4">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1026,17 +1091,17 @@ function POSPage() {
                     {orderToEdit.table && <Badge variant="outline" className="hidden sm:inline-flex text-xs px-1.5 py-0.5">Stol {orderToEdit.table.name}</Badge>}
                     <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" 
-                            onClick={() => handlePrintReceiptViaApi(orderToEdit)} 
-                            disabled={isFetchingReceipt || !orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}>
-                             {isFetchingReceipt ? <Loader2 className="h-4 w-4 animate-spin"/> : <Printer className="h-4 w-4" />}
+                            onClick={() => printReceiptViaWindowPrint(orderToEdit)} 
+                            disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}>
+                             <Printer className="h-4 w-4" />
                         </Button>
-                    </TooltipTrigger><TooltipContent><p>Mijoz Cheki</p></TooltipContent></Tooltip>
+                    </TooltipTrigger><TooltipContent><p>Mijoz Cheki (Hozirgi)</p></TooltipContent></Tooltip>
                     
                     <Tooltip><TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8" 
-                            onClick={() => handlePrintKitchenReceiptViaApi(orderToEdit, 'initial')} 
-                            disabled={isFetchingKitchenReceipt || !orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}>
-                            {isFetchingKitchenReceipt ? <Loader2 className="h-4 w-4 animate-spin"/> : <Printer className="h-4 w-4 text-orange-500" />}
+                            onClick={() => printKitchenReceiptViaWindowPrint(orderToEdit, 'initial')} 
+                            disabled={!orderToEdit.items || orderToEdit.items.length === 0 || isAnyLoading}> {/* isFetchingKitchenReceipt olib tashlandi */}
+                            <Printer className="h-4 w-4 text-orange-500" /> {/* Loader olib tashlandi */}
                         </Button>
                     </TooltipTrigger><TooltipContent><p>Oshxona Cheki (To'liq)</p></TooltipContent></Tooltip>
                     
@@ -1046,8 +1111,8 @@ function POSPage() {
                         </Button>
                     </TooltipTrigger><TooltipContent><p>Bekor qilish</p></TooltipContent></Tooltip>
                   </>
-                ) : !editingOrderId ? ( // Yangi buyurtma rejimi
-                  <>
+                ) : !editingOrderId ? (
+                   <> {/* ... (Yangi buyurtma uchun knopkalar o'zgarishsiz) ... */}
                     {orderType === "dine_in" && (
                       <>
                         {selectedTableId && tables.find((t: any) => t.id === selectedTableId) && 
@@ -1066,11 +1131,12 @@ function POSPage() {
                         </TooltipTrigger><TooltipContent><p>{customerInfo.name}, {customerInfo.phone}</p></TooltipContent></Tooltip> :
                         <Button variant="outline" className="h-10 text-sm px-3" onClick={() => setShowCustomerDialog(true)} disabled={isAnyLoading}>Mijoz</Button>
                     )}
-                  </>
+                   </>
                 ) : null}
               </div>
             </div>
             <ScrollArea className="flex-1 p-4">
+              {/* ... (Panel ichidagi mahsulotlar ro'yxati JSX o'zgarishsiz) ... */}
               {isEditLoadingManual ? <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin mr-2" /> Buyurtma yuklanmoqda...</div> :
                editErrorManual ? <div className="text-destructive p-4 text-center">{editErrorManual} <Button variant="link" onClick={() => editingOrderId && loadOrderForEditing(editingOrderId)}>Qayta urinish</Button></div> :
                currentPanelItems.length === 0 ? <div className="text-muted-foreground text-center p-10"><ShoppingCart className="mx-auto h-12 w-12 mb-2" />{editingOrderId ? "Buyurtmada mahsulot yo'q" : "Savat bo'sh"}</div> :
@@ -1101,20 +1167,20 @@ function POSPage() {
               {submitEditError && <p className="text-center text-destructive text-xs mt-4 p-2 bg-destructive/10 rounded">{submitEditError}</p>}
             </ScrollArea>
             <div className="border-t border-border p-4 shrink-0 bg-muted/20">
+              {/* ... (Panel pastki qismi JSX o'zgarishsiz) ... */}
               <div className="space-y-1 mb-4 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Jami (mahsulot):</span><span className="font-semibold">{currentPanelTotal.toLocaleString('uz-UZ')} so‘m</span></div>
-                {editingOrderId && orderToEdit && ( // Faqat tahrirlash rejimida ko'rsatiladi
+                {editingOrderId && orderToEdit && (
                   <>
                     <div className="flex justify-between"><span className="text-muted-foreground">Holati:</span><Badge variant={orderToEdit.status === 'completed' || orderToEdit.status === 'paid' ? 'success' : orderToEdit.status === 'cancelled' ? 'destructive' : 'secondary'} className="capitalize">{orderToEdit.status_display || orderToEdit.status}</Badge></div>
-                    {Number(orderToEdit.service_fee_percent || 0) > 0 && 
+                    {Number(orderToEdit.actual_service_fee_percent || orderToEdit.service_fee_percent || 0) > 0 && 
                       <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">Xizmat ({orderToEdit.service_fee_percent}%):</span>
-                        <span>{(currentPanelTotal * Number(orderToEdit.service_fee_percent) / 100).toLocaleString('uz-UZ')} so'm</span>
+                        <span className="text-muted-foreground">Xizmat ({orderToEdit.actual_service_fee_percent || orderToEdit.service_fee_percent}%):</span>
+                        <span>{(currentPanelTotal * Number(orderToEdit.actual_service_fee_percent || orderToEdit.service_fee_percent) / 100).toLocaleString('uz-UZ')} so'm</span>
                       </div>
                     }
                     <div className="flex justify-between font-semibold border-t pt-1 mt-1">
                       <span className="text-muted-foreground">Yakuniy Narx:</span>
-                      {/* `orderToEdit.final_price` ni ishlatamiz, chunki u backenddan kelgan aniq narx */}
                       <span>{Number(orderToEdit.final_price || currentPanelTotal).toLocaleString('uz-UZ')} so‘m</span>
                     </div>
                   </>
@@ -1131,7 +1197,7 @@ function POSPage() {
                     {updateOrderItemsMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Saqlash
                   </Button>
                   {orderToEdit.order_type === 'dine_in' && orderToEdit.table &&
-                   tables.find((t:any) => t.id === orderToEdit.table.id)?.active_order_id === editingOrderId && // Faqat shu stolning aktiv buyurtmasi bo'lsa
+                   tables.find((t:any) => t.id === orderToEdit.table.id)?.active_order_id === editingOrderId &&
                    !['paid', 'completed', 'cancelled'].includes(orderToEdit.status) 
                    && (
                     <Button 
@@ -1141,10 +1207,9 @@ function POSPage() {
                       onClick={() => { 
                         const currentTable = tables.find((t:any) => t.id === orderToEdit.table.id); 
                         setTableForCheckout(currentTable); 
-                        // To'lov dialogi uchun `paymentDetails` ni to'ldirish
                         setPaymentDetails({
                             method: "cash",
-                            received_amount: "", // Buni bo'sh qoldiramiz
+                            received_amount: "",
                             mobile_provider: "Click"
                         });
                         setShowCheckoutDialog(true); 
@@ -1173,7 +1238,8 @@ function POSPage() {
           </div>
         </div>
 
-        {/* Dialoglar (o'zgarishsiz qolishi mumkin yoki kichik tuzatishlar) */}
+        {/* Dialoglar (o'zgarishsiz) */}
+        {/* ... (Stol tanlash, Mijoz ma'lumotlari, Chiqish, Buyurtmalar tarixi, To'lov dialoglari JSX o'zgarishsiz) ... */}
         <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
           <DialogContent className="sm:max-w-lg md:max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col">
             <DialogHeader><DialogTitle>Stol tanlash</DialogTitle><DialogDescription>Buyurtma uchun stol tanlang yoki band stolni oching.</DialogDescription></DialogHeader>
@@ -1205,29 +1271,27 @@ function POSPage() {
                             : "bg-green-100 border-green-400 text-green-800 hover:bg-green-200 dark:bg-green-900/30 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-800/40"}`}
                           onClick={() => {
                             if (isAnyLoading) return;
-                            if (!table.is_available) { // Stol band bo'lsa
+                            if (!table.is_available) {
                               if (table.active_order_id) {
-                                if (editingOrderId === table.active_order_id) { setShowTableDialog(false); return; } // Shu buyurtma allaqachon tahrirlanmoqda
-                                finishEditingInternal(); // Boshqa tahrirlashni yopish
-                                loadOrderForEditing(table.active_order_id, table); // Band stolning buyurtmasini tahrirlashga ochish
+                                if (editingOrderId === table.active_order_id) { setShowTableDialog(false); return; }
+                                finishEditingInternal();
+                                loadOrderForEditing(table.active_order_id, table);
                               } else { 
                                 toast.warn(`Stol ${table.name} band, lekin aktiv buyurtmasi topilmadi. Ma'lumotlar yangilanmoqda...`);
                                 queryClient.invalidateQueries({ queryKey: ['tables'] }); 
                               }
-                            } else { // Stol bo'sh bo'lsa
-                              if (editingOrderId) { // Agar boshqa buyurtma tahrirlanayotgan bo'lsa
+                            } else {
+                              if (editingOrderId) {
                                 toast.info("Avval joriy buyurtmani saqlang yoki bekor qiling.");
-                                // Yoki avtomatik finishEditingInternal(true);
                                 return;
                               }
-                              // Yangi buyurtma uchun stol tanlash
-                              if (orderType !== 'dine_in') { // Agar boshqa turda bo'lsa, "Shu yerda"ga o'tkazish
+                              if (orderType !== 'dine_in') {
                                   setOrderType('dine_in');
                                   setCart([]); 
                                   toast.info("Buyurtma turi 'Shu yerda' ga o'zgartirildi.");
                               }
                               setSelectedTableId(table.id);
-                              setCustomerInfo({ name: "", phone: "+998 ", address: "" }); // Mijoz ma'lumotlarini tozalash
+                              setCustomerInfo({ name: "", phone: "+998 ", address: "" });
                               setShowTableDialog(false);
                               toast.success(`Stol ${table.name} tanlandi.`);
                             }
@@ -1242,11 +1306,11 @@ function POSPage() {
                             </div>
                           )}
                         </Button>
-                        {!table.is_available && table.active_order_id && !checkoutMutation.isPending && // To'lov jarayoni ketmayotgan bo'lsa
+                        {!table.is_available && table.active_order_id && !checkoutMutation.isPending &&
                           (
                           <Button
                             variant="destructive" size="xs" className="w-full text-[10px] px-1 py-0.5 h-auto"
-                            onClick={() => { setTableForCheckout(table); setShowCheckoutDialog(true); }}
+                            onClick={() => { setTableForCheckout(table); setShowCheckoutDialog(true); setSubmitEditError(null); }}
                             disabled={isAnyLoading} > To'lash </Button>
                         )}
                     </div>
@@ -1257,7 +1321,7 @@ function POSPage() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showCustomerDialog} onOpenChange={setShowCustomerDialog}>
+        <Dialog open={showCustomerDialog} onOpenChange={(open) => { if(!open) setSubmitEditError(null); setShowCustomerDialog(open);}}>
           <DialogContent className="sm:max-w-md"><DialogHeader><DialogTitle>{orderType === "delivery" ? "Yetkazish ma‘lumotlari" : "Mijoz ma‘lumotlari"}</DialogTitle></DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-1"><Label htmlFor="cust-name">Ism*</Label><Input id="cust-name" value={customerInfo.name} onChange={(e) => setCustomerInfo(p=>({...p, name: e.target.value}))} /></div>
@@ -1301,9 +1365,9 @@ function POSPage() {
                             toast.info("Boshqa amal bajarilmoqda, iltimos kuting.");
                             return; 
                         }
-                        if (editingOrderId === order.id) { setShowHistoryDialog(false); return; } // Agar shu buyurtma allaqachon ochiq bo'lsa
-                        finishEditingInternal(); // Boshqa tahrirlashni yopish
-                        loadOrderForEditing(order.id); // Tanlangan buyurtmani tahrirlashga ochish
+                        if (editingOrderId === order.id) { setShowHistoryDialog(false); return; }
+                        finishEditingInternal();
+                        loadOrderForEditing(order.id);
                       }}>
                       <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-6 md:grid-cols-8 gap-x-4 gap-y-2 text-sm">
                         <div className="sm:col-span-2 md:col-span-2 space-y-0.5"><div className="font-medium">ID: <span className="text-primary font-semibold">{order.id}</span></div><div className="text-muted-foreground text-xs">{formatDateTime(order.created_at)}</div></div>
@@ -1327,7 +1391,6 @@ function POSPage() {
           </DialogContent>
         </Dialog>
 
-        {/* To'lov Dialogi */}
         <Dialog open={showCheckoutDialog} onOpenChange={(open) => { if(!open) setSubmitEditError(null); setShowCheckoutDialog(open);}}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
