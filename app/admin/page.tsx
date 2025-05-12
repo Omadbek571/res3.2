@@ -1773,15 +1773,7 @@ function AdminDashboard() {
                         </p>
                     </CardContent>
                 </Card>
-                    <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">O'rtacha chek</CardTitle><CreditCard className="h-4 w-4 text-muted-foreground" /></CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{(stats?.average_check?.value ?? 0).toLocaleString()} so'm</div>
-                        <p className={`text-xs ${stats?.average_check?.change_percent ?? 0 >= 0 ? 'text-green-600' : 'text-red-600'} dark:${stats?.average_check?.change_percent ?? 0 >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {stats?.average_check?.change_percent ?? 0 >= 0 ? '+' : ''}{stats?.average_check?.change_percent?.toFixed(1) ?? 0}% vs {stats?.average_check?.comparison_period || "kecha"}
-                        </p>
-                    </CardContent>
-                    </Card>
+               
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Faol xodimlar</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader>
                     <CardContent>
